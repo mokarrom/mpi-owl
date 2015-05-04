@@ -63,7 +63,7 @@ import com.clarkparsia.pellint.test.PellintTestSuite;
 	WebOntTestSuite.class,
 	DLTestSuite.class,
 	ClassificationTestSuite.class,
-	ModularityTestSuite.class,
+	//ModularityTestSuite.class,
 	
 	// CLI Tests must go last, since some of them muck with PelletOptions!
 	pellet.test.CLITests.class
