@@ -74,7 +74,9 @@ public class TgBox extends TBoxBase {
 	 */
 
 	public void internalize() {
-
+		
+		UC = new ArrayList<Unfolding>();	//Added in order to get rid of crash at TBoxExpImpl.unfold(c).
+		
 		TC = new ArrayList<Unfolding>();
 		
 		log.fine( "Internalize started" );
