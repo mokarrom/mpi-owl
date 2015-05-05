@@ -32,6 +32,7 @@ package org.mindswap.pellet.tbox;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import org.mindswap.pellet.tbox.impl.Unfolding;
@@ -79,6 +80,14 @@ public interface TBox {
 	 * @return
 	 */
 	public Iterator<Unfolding> unfold( ATermAppl c );
+	
+	/**
+	 * Return all the internalized concepts
+	 *  
+	 * @param c
+	 * @return
+	 */
+	public List<Unfolding> getTC();
 
 	/**
 	 * Returns if a concept has only primitive definitions in this TBox. Only

@@ -520,6 +520,10 @@ public class TBoxExpImpl implements TBox {
 			result.append( Tg.getUC().iterator() );
 		return result;
 	}
+	
+	public List<Unfolding> getTC() {
+		return Tg.getTC();
+	}
 
 	public boolean isPrimitive(ATermAppl c) {
 		TermDefinition td = Tu.getTD( c );		

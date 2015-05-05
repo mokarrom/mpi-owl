@@ -58,6 +58,9 @@ public class TgBox extends TBoxBase {
 	// universal concept
 	private List<Unfolding>		UC	= null;
 	
+	// internalize concepts
+	private List<Unfolding>		TC	= null;
+	
 	/*
 	 * Constructors
 	 */
@@ -72,9 +75,16 @@ public class TgBox extends TBoxBase {
 
 	public void internalize() {
 
-		UC = new ArrayList<Unfolding>();
+		TC = new ArrayList<Unfolding>();
+		
+		log.fine( "Internalize started" );
 
-		for( TermDefinition termDef : termhash.values() ) {
+		if( log.isLoggable( Level.FINE ) ) {
+			log.fine( "Tg.size was " + termhash.size() + " Tu.size was " + tbox.Tu.size() );
+		}
+		
+		//internalize Tu
+		for( TermDefinition termDef : tbox.Tu.termhash.values() ) {
 			for( ATermAppl subClassAxiom : termDef.getSubClassAxioms() ) {
 				ATermAppl c1 = (ATermAppl) subClassAxiom.getArgument( 0 );
 				ATermAppl c2 = (ATermAppl) subClassAxiom.getArgument( 1 );
@@ -88,7 +98,7 @@ public class TgBox extends TBoxBase {
 				else
 					explanation = Collections.emptySet();
 
-				UC.add( Unfolding.create( norm, explanation ) );
+				TC.add( Unfolding.create( norm, explanation ) );
 			}
 
 			for( ATermAppl eqClassAxiom : termDef.getEqClassAxioms() ) {
@@ -104,9 +114,9 @@ public class TgBox extends TBoxBase {
 				else
 					explanation = Collections.emptySet();
 
-				UC.add( Unfolding.create( ATermUtils.normalize( notC1orC2 ),
+				TC.add( Unfolding.create( ATermUtils.normalize( notC1orC2 ),
 						explanation ) );
-				UC.add( Unfolding.create( ATermUtils.normalize( notC2orC1 ),
+				TC.add( Unfolding.create( ATermUtils.normalize( notC2orC1 ),
 						explanation ) );
 			}
 		}
@@ -473,6 +483,13 @@ public class TgBox extends TBoxBase {
 	 */
 	public List<Unfolding> getUC() {
 		return UC;
+	}
+	
+	/**
+	* @return Returns the TC.
+	*/
+	public List<Unfolding> getTC() {
+			return TC;
 	}
 
 	public int size() {

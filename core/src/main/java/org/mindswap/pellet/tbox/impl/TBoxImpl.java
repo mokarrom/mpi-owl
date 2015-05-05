@@ -1023,6 +1023,10 @@ public class TBoxImpl implements TBox {
 		}
 	}
 
+	public List<Unfolding> getTC() {
+		return null;
+	}
+
 	public boolean isPrimitive(ATermAppl c) {	
 		return ATermUtils.isPrimitive( c ) && !primitiveTbox.contains( c );
 	}

@@ -52,6 +52,7 @@ import org.mindswap.pellet.tableau.completion.rule.SomeValuesRule;
 import org.mindswap.pellet.tableau.completion.rule.TableauRule;
 import org.mindswap.pellet.tableau.completion.rule.UnfoldingRule;
 import org.mindswap.pellet.tbox.TBox;
+import org.mindswap.pellet.tbox.impl.Unfolding;
 import org.mindswap.pellet.utils.ATermUtils;
 import org.mindswap.pellet.utils.Timer;
 import org.mindswap.pellet.utils.Timers;
@@ -200,7 +201,7 @@ public abstract class CompletionStrategy {
 
 		tableauRules.add(dataSatRule);
 
-		tableauRules.add(unfoldingRule);
+		//tableauRules.add(unfoldingRule);	//[TODO]: Temporarily commented.
 
 		tableauRules.add(disjunctionRule);
 
@@ -329,6 +330,8 @@ public abstract class CompletionStrategy {
 		while (i.hasNext()) {
 			Individual n = i.next();
 
+			addInternalizedConcept(n);
+			
 			if (n.isMerged()) {
 				continue;
 			}
@@ -394,6 +397,8 @@ public abstract class CompletionStrategy {
 	public Individual createFreshIndividual(Individual parent, DependencySet ds) {
 		Individual ind = abox.addFreshIndividual(parent, ds);
 
+		addInternalizedConcept(ind);
+		
 		applyUniversalRestrictions(ind);
 
 		return ind;
@@ -1250,5 +1255,25 @@ public abstract class CompletionStrategy {
 			Individual ind = i.next();
 			allValuesRule.apply(ind);
 		}
+	}
+	
+	//Add internalize concepts to the node 
+	public void addInternalizedConcept(Node n) {
+		
+		List<Unfolding> intConceptList = tbox.getTC();
+        int size = intConceptList.size();
+        
+        for( int j = 0; j < size; j++ ) {   	 
+        	 Unfolding intConcept = intConceptList.get(j);
+        	 ATermAppl c = intConcept.getResult();
+        	 
+        	 DependencySet ds = DependencySet.INDEPENDENT;
+        	 
+        	 if (log.isLoggable(Level.FINE)) {
+     			log.fine("Node: " + n + " # adding internalize concept: " + ATermUtils.toString(c));
+     		 }
+        	 
+        	 addType( n, c , ds );
+        }
 	}
 }
