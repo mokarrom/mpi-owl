@@ -387,6 +387,16 @@ public abstract class CompletionStrategy {
 		abox.setComplete(false);
 		abox.setInitialized(true);
 	}
+	
+	public void initialize (ABox abox) {
+		this.abox = abox;
+		
+		this.abox.setBranch(abox.getBranches().size() + 1);
+		this.abox.stats.treeDepth = 1;
+		this.abox.setChanged(true);
+		this.abox.setComplete(false);
+		this.abox.setInitialized(true);
+	}
 
 	/**
 	 * apply all the tableau rules to the designated ABox

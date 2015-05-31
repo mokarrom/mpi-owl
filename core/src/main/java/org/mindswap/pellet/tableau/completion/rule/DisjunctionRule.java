@@ -10,8 +10,16 @@ package org.mindswap.pellet.tableau.completion.rule;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
 
+import mpi.MPI;
+
+import org.mindswap.pellet.ABox;
+import org.mindswap.pellet.Clash;
+import org.mindswap.pellet.DependencySet;
 import org.mindswap.pellet.Individual;
 import org.mindswap.pellet.Node;
 import org.mindswap.pellet.PelletOptions;
@@ -100,12 +108,85 @@ public class DisjunctionRule extends AbstractTableauRule {
 			if( node.hasType( disj[index] ) )
 				return;
 		}
+		
+		mpiApplyDisjunctionRule (node, disjunction, disj);
 
-		DisjunctionBranch newBranch = new DisjunctionBranch( strategy.getABox(), strategy, node,
-				disjunction, node.getDepends( disjunction ), disj );
-		strategy.addBranch( newBranch );
-
-		newBranch.tryNext();
+//		DisjunctionBranch newBranch = new DisjunctionBranch( strategy.getABox(), strategy, node,
+//				disjunction, node.getDepends( disjunction ), disj );
+//		strategy.addBranch( newBranch );
+//
+//		newBranch.tryNext();
 	}
-
+	
+	protected void mpiApplyDisjunctionRule (Individual node, ATermAppl disjunction, ATermAppl[] disj) {
+		ABox abox = strategy.getABox();
+		int j, k;
+		
+		for ( j = 0; j < disj.length; j++) {
+			ATermAppl d = disj[j];
+			DependencySet ds = node.getDepends( disjunction );
+			ATermAppl notD = ATermUtils.negate(d);
+			DependencySet clashDepends = node.getDepends(notD);
+			if(clashDepends == null) {
+			    strategy.addType(node, d, ds);
+				// we may still find a clash if concept is allValuesFrom
+				// and there are some conflicting edges
+				if(abox.isClosed()) 
+					clashDepends = abox.getClash().getDepends();
+			}
+			else {
+			    clashDepends = clashDepends.union(ds, abox.doExplanation());
+			}
+			
+			// if there is a clash
+			if(clashDepends != null) {
+				if( log.isLoggable( Level.FINE ) ) {
+					Clash clash = abox.isClosed() ? abox.getClash() : Clash.atomic(node, clashDepends, d);
+		            log.fine("CLASH: Branch " + abox.getBranch() + " " + clash + "!" + " " + clashDepends.getExplain());
+				}
+			}
+			else {
+				break;
+			}
+		}
+		// If there are more ABoxes, send them to the manager.
+		ATermAppl nodeName = node.getTerm();
+		
+		for ( k = j; k < disj.length; k++ ) {
+			ABox newAbox = abox.copy();
+			Node newNode = newAbox.getNode(nodeName);
+			
+			ATermAppl d = disj[k];
+			DependencySet ds = newNode.getDepends( disjunction );
+			ATermAppl notD = ATermUtils.negate(d);
+			DependencySet clashDepends = newNode.getDepends(notD);
+			
+			if(clashDepends == null) {	
+			    strategy.addType(newNode, d, ds);
+				// we may still find a clash if concept is allValuesFrom
+				// and there are some conflicting edges
+				if(newAbox.isClosed()) 
+					clashDepends = newAbox.getClash().getDepends();
+			}
+			else {
+			    clashDepends = clashDepends.union(ds, newAbox.doExplanation());
+			}
+			
+			// if there is a clash
+			if(clashDepends != null) {
+				if( log.isLoggable( Level.FINE ) ) {
+					Clash clash = newAbox.isClosed() ? newAbox.getClash() : Clash.atomic(newNode, clashDepends, d);
+		            log.fine("CLASH: Branch " + newAbox.getBranch() + " " + clash + "!" + " " + clashDepends.getExplain());
+				}
+			}
+			else {	//MASTER = 0;	NEW_ABOX_TAG = 204;
+				MPI.COMM_WORLD.Send(newAbox, 0, 1, MPI.OBJECT, 0, 204);
+				newAbox = null;
+			}
+		}
+	}
+	
 }
+
+
+

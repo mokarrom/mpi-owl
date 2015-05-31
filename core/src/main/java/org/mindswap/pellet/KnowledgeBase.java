@@ -66,6 +66,7 @@ import org.mindswap.pellet.output.ATermBaseVisitor;
 import org.mindswap.pellet.tableau.branch.Branch;
 import org.mindswap.pellet.tableau.completion.CompletionStrategy;
 import org.mindswap.pellet.tableau.completion.EmptySRIQStrategy;
+import org.mindswap.pellet.tableau.completion.MPIALCStrategy;
 import org.mindswap.pellet.tableau.completion.SROIQStrategy;
 import org.mindswap.pellet.tableau.completion.incremental.DependencyIndex;
 import org.mindswap.pellet.tableau.completion.incremental.IncrementalRestore;
@@ -4507,7 +4508,7 @@ public class KnowledgeBase {
 	 * 
 	 * @return
 	 */
-	CompletionStrategy chooseStrategy(ABox abox, Expressivity expressivity) {
+	public CompletionStrategy chooseStrategy(ABox abox, Expressivity expressivity) {
 		boolean conceptSatisfiability = (abox.size() == 1)
 				&& new IndividualIterator( abox ).next().isConceptRoot();
 		
@@ -4527,7 +4528,7 @@ public class KnowledgeBase {
 			}							
 		}		
 
-		return new SROIQStrategy( abox );
+		return new MPIALCStrategy( abox );
 	}
 
 	/**

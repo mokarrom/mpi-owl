@@ -1411,82 +1411,82 @@ public class ABox {
 	        log.fine( "Consistency check starts" );
         }
 
-		CompletionStrategy strategy = kb.chooseStrategy( abox, expr );
+//		CompletionStrategy strategy = kb.chooseStrategy( abox, expr );
+//
+//		if( log.isLoggable( Level.FINE ) ) {
+//	        log.fine( "Strategy: " + strategy.getClass().getName() );
+//        }
+//
+//		Timer completionTimer = kb.timers.getTimer( "complete" );
+//		completionTimer.start();
+//		try {
+//			strategy.complete( expr );
+//		}
+//		finally {
+//			completionTimer.stop();
+//		}
+//
+//		boolean consistent = !abox.isClosed();
+//
+//		if( x != null && c != null && cacheModel ) {
+//			cache( abox.getIndividual( x ), c, consistent );
+//		}
+//		
+//		if( log.isLoggable( Level.FINE ) ) {
+//			log.fine( "Consistent: " + consistent + " Time: " + t.getElapsed()
+//					+" Branches " + abox.branches.size()
+//					+" Tree depth: " + abox.stats.treeDepth + " Tree size: " + abox.getNodes().size()
+//					+" Restores " + abox.stats.globalRestores + " global " + abox.stats.localRestores + " local"
+//					+" Backtracks " + abox.stats.backtracks + " avg backjump " + (abox.stats.backjumps/(double)abox.stats.backtracks));
+//		}
+//
+//		if( consistent ) {
+//			if( initialConsistencyCheck && isEmpty() ) {
+//	            setComplete( true );
+//            }
+//		}
+//		else {
+//			lastClash = abox.getClash();
+//			if( log.isLoggable( Level.FINE ) ) {
+//	            log.fine( "Clash: " + abox.getClash().detailedString() );
+//            }
+//			if( doExplanation && PelletOptions.USE_TRACING ) {
+//				if( individuals.size() == 1 ) {				
+//					ATermAppl ind = individuals.iterator().next();
+//
+//					ATermAppl tempAxiom = ATermUtils.makeTypeAtom( ind, c );
+//					Set<ATermAppl> explanationSet = getExplanationSet();
+//					boolean removed = explanationSet.remove( tempAxiom );
+//					if( !removed ) {
+//						if( log.isLoggable( Level.FINE ) ) {
+//	                        log.fine( "Explanation set is missing an axiom.\n\tAxiom: " + tempAxiom
+//									+ "\n\tExplantionSet: " + explanationSet );
+//                        }
+//					}
+//				}
+//				if( log.isLoggable( Level.FINE ) ) {
+//					StringBuilder sb = new StringBuilder();
+//					for( ATermAppl axiom : getExplanationSet() ) {
+//						sb.append( "\n\t" );
+//						sb.append( ATermUtils.toString( axiom ) );
+//					}
+//					log.fine( "Explanation: " + sb );
+//				}
+//			}
+//		}
+//
+//		stats.consistencyCount++;
+//
+//		if( keepLastCompletion ) {
+//	        lastCompletion = abox;
+//        }
+//        else {
+//	        lastCompletion = null;
+//        }
+//
+//		t.stop();
 
-		if( log.isLoggable( Level.FINE ) ) {
-	        log.fine( "Strategy: " + strategy.getClass().getName() );
-        }
-
-		Timer completionTimer = kb.timers.getTimer( "complete" );
-		completionTimer.start();
-		try {
-			strategy.complete( expr );
-		}
-		finally {
-			completionTimer.stop();
-		}
-
-		boolean consistent = !abox.isClosed();
-
-		if( x != null && c != null && cacheModel ) {
-			cache( abox.getIndividual( x ), c, consistent );
-		}
-		
-		if( log.isLoggable( Level.FINE ) ) {
-			log.fine( "Consistent: " + consistent + " Time: " + t.getElapsed()
-					+" Branches " + abox.branches.size()
-					+" Tree depth: " + abox.stats.treeDepth + " Tree size: " + abox.getNodes().size()
-					+" Restores " + abox.stats.globalRestores + " global " + abox.stats.localRestores + " local"
-					+" Backtracks " + abox.stats.backtracks + " avg backjump " + (abox.stats.backjumps/(double)abox.stats.backtracks));
-		}
-
-		if( consistent ) {
-			if( initialConsistencyCheck && isEmpty() ) {
-	            setComplete( true );
-            }
-		}
-		else {
-			lastClash = abox.getClash();
-			if( log.isLoggable( Level.FINE ) ) {
-	            log.fine( "Clash: " + abox.getClash().detailedString() );
-            }
-			if( doExplanation && PelletOptions.USE_TRACING ) {
-				if( individuals.size() == 1 ) {				
-					ATermAppl ind = individuals.iterator().next();
-
-					ATermAppl tempAxiom = ATermUtils.makeTypeAtom( ind, c );
-					Set<ATermAppl> explanationSet = getExplanationSet();
-					boolean removed = explanationSet.remove( tempAxiom );
-					if( !removed ) {
-						if( log.isLoggable( Level.FINE ) ) {
-	                        log.fine( "Explanation set is missing an axiom.\n\tAxiom: " + tempAxiom
-									+ "\n\tExplantionSet: " + explanationSet );
-                        }
-					}
-				}
-				if( log.isLoggable( Level.FINE ) ) {
-					StringBuilder sb = new StringBuilder();
-					for( ATermAppl axiom : getExplanationSet() ) {
-						sb.append( "\n\t" );
-						sb.append( ATermUtils.toString( axiom ) );
-					}
-					log.fine( "Explanation: " + sb );
-				}
-			}
-		}
-
-		stats.consistencyCount++;
-
-		if( keepLastCompletion ) {
-	        lastCompletion = abox;
-        }
-        else {
-	        lastCompletion = null;
-        }
-
-		t.stop();
-
-		return consistent;
+		return true;
 	}
 
 	/**
