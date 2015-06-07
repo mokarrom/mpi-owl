@@ -106,7 +106,7 @@ public class ABox {
 	// this prefix is not a root node
 	private int								anonCount			= 0;
 
-	public  ABoxStats						stats				= new ABoxStats();
+	public ABoxStats						stats				= new ABoxStats();
 	
 	/**
 	 * datatype reasoner used for checking the satisfiability of datatypes
@@ -136,7 +136,7 @@ public class ABox {
 	// the table maps every atomic concept A (and also its negation not(A))
 	// to the root node of its completed tree. If a concept is mapped to
 	// null value it means it is not satisfiable
-	protected ConceptCache					cache;
+	protected transient ConceptCache					cache;
 
 	// pseudo model for this Abox. This is the ABox that results from
 	// completing to the original Abox

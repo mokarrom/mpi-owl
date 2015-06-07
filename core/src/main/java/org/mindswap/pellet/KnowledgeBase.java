@@ -132,7 +132,7 @@ public class KnowledgeBase {
 	private Set<ATermAppl>									individuals;
 
 	protected TaxonomyBuilder								builder;
-	private ProgressMonitor									builderProgressMonitor;
+	private transient ProgressMonitor						builderProgressMonitor;
 
 	private boolean											consistent;
 

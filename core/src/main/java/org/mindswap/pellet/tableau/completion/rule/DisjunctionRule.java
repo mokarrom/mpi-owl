@@ -8,6 +8,7 @@
 
 package org.mindswap.pellet.tableau.completion.rule;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -21,10 +22,10 @@ import org.mindswap.pellet.ABox;
 import org.mindswap.pellet.Clash;
 import org.mindswap.pellet.DependencySet;
 import org.mindswap.pellet.Individual;
+import org.mindswap.pellet.kryoserializer.KryoSerializer;
 import org.mindswap.pellet.Node;
 import org.mindswap.pellet.PelletOptions;
 import org.mindswap.pellet.exceptions.InternalReasonerException;
-import org.mindswap.pellet.tableau.branch.DisjunctionBranch;
 import org.mindswap.pellet.tableau.completion.CompletionStrategy;
 import org.mindswap.pellet.tableau.completion.queue.NodeSelector;
 import org.mindswap.pellet.utils.ATermUtils;
@@ -179,8 +180,12 @@ public class DisjunctionRule extends AbstractTableauRule {
 		            log.fine("CLASH: Branch " + newAbox.getBranch() + " " + clash + "!" + " " + clashDepends.getExplain());
 				}
 			}
-			else {	//MASTER = 0;	NEW_ABOX_TAG = 204;
-				MPI.COMM_WORLD.Send(newAbox, 0, 1, MPI.OBJECT, 0, 204);
+			else {	//MASTER = 0;	NEW_ABOX_TAG = 204;		NEW_ABOX = 205
+				int wCount[] = new int[1];
+				byte sByteArray[] = KryoSerializer.serialize(newAbox);
+				wCount[0] = sByteArray.length;
+				MPI.COMM_WORLD.Send(wCount, 0, 1, MPI.INT, 0, 204);
+				MPI.COMM_WORLD.Send(sByteArray, 0, wCount[0], MPI.BYTE, 0, 205);
 				newAbox = null;
 			}
 		}
