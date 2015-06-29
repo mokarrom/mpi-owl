@@ -119,16 +119,23 @@ public class DisjunctionRule extends AbstractTableauRule {
 //		newBranch.tryNext();
 	}
 	
-	protected void mpiApplyDisjunctionRule (Individual node, ATermAppl disjunction, ATermAppl[] disj) {
+	protected void mpiApplyDisjunctionRule (Individual node, ATermAppl disjunction, ATermAppl[] disj) {	
 		ABox abox = strategy.getABox();
-		int j, k;
+		int j, k, clashFound = 0;
+		int disjLength = disj.length;
+		DependencySet lastClashDepends = null;
 		
-		for ( j = 0; j < disj.length; j++) {
+		if( log.isLoggable( Level.FINE ) )  
+            log.fine( "ABox branch : (" + abox.getBranch() + ") Node: " + node + " : apply disjunction rule on " + ATermUtils.toString(disjunction) );
+		
+		for ( j = 0; j < disjLength; j++) {
 			ATermAppl d = disj[j];
 			DependencySet ds = node.getDepends( disjunction );
 			ATermAppl notD = ATermUtils.negate(d);
 			DependencySet clashDepends = node.getDepends(notD);
 			if(clashDepends == null) {
+				if( log.isLoggable( Level.FINE ) )  
+	                log.fine( "CURRENT# DISJ: Branch (" + abox.getBranch() + ") Node: " + node + " : adding concept: " +  ATermUtils.toString( d ) + " OF " + ATermUtils.toString(disjunction) );
 			    strategy.addType(node, d, ds);
 				// we may still find a clash if concept is allValuesFrom
 				// and there are some conflicting edges
@@ -141,19 +148,28 @@ public class DisjunctionRule extends AbstractTableauRule {
 			
 			// if there is a clash
 			if(clashDepends != null) {
+				clashFound++;
+				lastClashDepends = clashDepends;
 				if( log.isLoggable( Level.FINE ) ) {
 					Clash clash = abox.isClosed() ? abox.getClash() : Clash.atomic(node, clashDepends, d);
-		            log.fine("CLASH: Branch " + abox.getBranch() + " " + clash + "!" + " " + clashDepends.getExplain());
+		            log.fine("CURRENT# CLASH (C): Branch " + abox.getBranch() + " " + clash + "!" + " " + clashDepends.getExplain());
 				}
 			}
 			else {
+				j++;
 				break;
 			}
 		}
+		// If all options of the current branch are blocked, this ABox is closed. 
+		// Setclash will insist to become the ABox is closed.
+		if (clashFound == disjLength) {
+			abox.setClash(Clash.atomic(node, lastClashDepends));
+		}
+		
 		// If there are more ABoxes, send them to the manager.
 		ATermAppl nodeName = node.getTerm();
 		
-		for ( k = j; k < disj.length; k++ ) {
+		for ( k = j; k < disjLength; k++ ) {
 			ABox newAbox = abox.copy();
 			Node newNode = newAbox.getNode(nodeName);
 			
@@ -163,6 +179,8 @@ public class DisjunctionRule extends AbstractTableauRule {
 			DependencySet clashDepends = newNode.getDepends(notD);
 			
 			if(clashDepends == null) {	
+				if( log.isLoggable( Level.FINE ) )  
+	                log.fine( "FUTURE# DISJ: Branch (" + newAbox.getBranch() + ") Node: " + node + " : adding concept: " +  ATermUtils.toString( d ) + " OF " + ATermUtils.toString(disjunction) );
 			    strategy.addType(newNode, d, ds);
 				// we may still find a clash if concept is allValuesFrom
 				// and there are some conflicting edges
@@ -177,10 +195,16 @@ public class DisjunctionRule extends AbstractTableauRule {
 			if(clashDepends != null) {
 				if( log.isLoggable( Level.FINE ) ) {
 					Clash clash = newAbox.isClosed() ? newAbox.getClash() : Clash.atomic(newNode, clashDepends, d);
-		            log.fine("CLASH: Branch " + newAbox.getBranch() + " " + clash + "!" + " " + clashDepends.getExplain());
+		            log.fine("FUTURE# CLASH: Branch " + newAbox.getBranch() + " " + clash + "!" + " " + clashDepends.getExplain());
 				}
+				newAbox = null;
 			}
-			else {	//MASTER = 0;	NEW_ABOX_TAG = 204;		NEW_ABOX = 205
+			else {	
+				newAbox.incrementBranch();
+				if( log.isLoggable( Level.FINE ) ) {
+		            log.fine("New ABox# DISJ: Branch (" + newAbox.getBranch() + ") is sending to the Manager." );
+				}
+				//MASTER = 0;	NEW_ABOX_TAG = 204;		NEW_ABOX = 205
 				int wCount[] = new int[1];
 				byte sByteArray[] = KryoSerializer.serialize(newAbox);
 				wCount[0] = sByteArray.length;
