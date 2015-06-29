@@ -289,14 +289,14 @@ public class Individual extends Node implements CachedNode {
 			}
 		}
 		else {
-			if (c.getAFun().equals(ATermUtils.ANDFUN)){
+			if (c.getAFun().getName().equals(ATermUtils.ANDFUN.getName())){
 				for(ATermList cs = (ATermList) c.getArgument(0); !cs.isEmpty(); cs = cs.getNext()) {
 					ATermAppl conj = (ATermAppl) cs.getFirst();
 					
 					addType(conj, ds, checkForPruned);
 				}			
 			}
-			else if (c.getAFun().equals(ATermUtils.ALLFUN)) {
+			else if (c.getAFun().getName().equals(ATermUtils.ALLFUN.getName())) {
 				setChanged(ALL);			
 				types[ALL].add(c);			
 
@@ -305,7 +305,7 @@ public class Individual extends Node implements CachedNode {
 					abox.getCompletionQueue().add( qElement, NodeSelector.UNIVERSAL );
 				}
 			}
-			else if (c.getAFun().equals(ATermUtils.MINFUN)) {
+			else if (c.getAFun().getName().equals(ATermUtils.MINFUN.getName())) {
 				if(!isRedundantMin(c)) {
 					types[MIN].add(c);
 					setChanged(MIN);
@@ -323,7 +323,7 @@ public class Individual extends Node implements CachedNode {
 					checkMinClash(c, ds);
 				}				
 			}
-			else if(c.getAFun().equals(ATermUtils.NOTFUN)) {
+			else if(c.getAFun().getName().equals(ATermUtils.NOTFUN.getName())) {
 				ATermAppl x = (ATermAppl) c.getArgument(0);
 				if(ATermUtils.isAnd(x)) {
 					setChanged(OR);
@@ -395,7 +395,7 @@ public class Individual extends Node implements CachedNode {
 				else
 				    throw new InternalReasonerException( "Invalid type " +  c + " for individual " + name);
 			}
-			else if (c.getAFun().equals(ATermUtils.VALUEFUN)) {
+			else if (c.getAFun().getName().equals(ATermUtils.VALUEFUN.getName())) {
 				setChanged(NOM);
 				types[NOM].add(c);
 			
@@ -599,16 +599,16 @@ public class Individual extends Node implements CachedNode {
 			types[ATOM].remove(c);
 		}
 		else {
-			if(c.getAFun().equals(ATermUtils.ANDFUN)) {
+			if(c.getAFun().getName().equals(ATermUtils.ANDFUN.getName())) {
 //			    types[AND].remove(c);
 			}
-			else if (c.getAFun().equals(ATermUtils.ALLFUN)) {
+			else if (c.getAFun().getName().equals(ATermUtils.ALLFUN.getName())) {
 				types[ALL].remove(c);
 			}
-			else if (c.getAFun().equals(ATermUtils.MINFUN)) {
+			else if (c.getAFun().getName().equals(ATermUtils.MINFUN.getName())) {
 				types[MIN].remove(c);
 			}
-			else if (c.getAFun().equals(ATermUtils.NOTFUN)) {
+			else if (c.getAFun().getName().equals(ATermUtils.NOTFUN.getName())) {
 				ATermAppl x = (ATermAppl) c.getArgument(0);
 				if(ATermUtils.isAnd(x)) {
 					types[OR].remove(c);
@@ -631,7 +631,7 @@ public class Individual extends Node implements CachedNode {
 				else
 				    throw new InternalReasonerException( "Invalid type " +  c + " for individual " + name);				
 			}
-			else if(c.getAFun().equals(ATermUtils.VALUEFUN))
+			else if(c.getAFun().getName().equals(ATermUtils.VALUEFUN.getName()))
 				types[NOM].remove(c);
 			else
 				throw new RuntimeException("Invalid concept " + c);

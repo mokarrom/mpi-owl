@@ -306,7 +306,7 @@ public class ATermUtils {
 	}
 	
 	final static public boolean isAnonNominal(ATermAppl term) {
-		return term.getAFun().equals( ANON_NOMINAL_FUN );
+		return term.getAFun().getName().equals( ANON_NOMINAL_FUN.getName() );
 	}
 
 	final static public ATermAppl makeAnonNominal(int id) {
@@ -593,7 +593,7 @@ public class ATermUtils {
 	}
 		
 	final static public boolean isRestrictedDatatype(ATermAppl term) {
-		return term.getAFun().equals( RESTRDATATYPEFUN );
+		return term.getAFun().getName().equals( RESTRDATATYPEFUN.getName() );
 	}
 	
 	final static public ATermList makeList(ATerm singleton) {
@@ -835,27 +835,27 @@ public class ATermUtils {
 		else {		
 			AFun fun = term.getAFun();
 			if( negated.isTrue() ) {
-				if( fun.equals( ATermUtils.ANDFUN ) ) {
+				if( fun.getName().equals( ATermUtils.ANDFUN.getName() ) ) {
 	                sb.append( ATermUtils.ORFUN.getName() );
                 }
-                else if( fun.equals( ATermUtils.ORFUN ) ) {
+                else if( fun.getName().equals( ATermUtils.ORFUN.getName() ) ) {
 	                sb.append( ATermUtils.ANDFUN.getName() );
                 }
-                else if( fun.equals( ATermUtils.SOMEFUN ) ) {
+                else if( fun.getName().equals( ATermUtils.SOMEFUN.getName() ) ) {
 	                sb.append( ATermUtils.ALLFUN.getName() );
                 }
-                else if( fun.equals( ATermUtils.ALLFUN ) ) {
+                else if( fun.getName().equals( ATermUtils.ALLFUN.getName() ) ) {
 	                sb.append( ATermUtils.SOMEFUN.getName() );
                 }
-                else if( fun.equals( ATermUtils.MINFUN ) ) {
+                else if( fun.getName().equals( ATermUtils.MINFUN.getName() ) ) {
 	                sb.append( ATermUtils.MAXFUN.getName() );
                 }
-                else if( fun.equals( ATermUtils.MAXFUN ) ) {
+                else if( fun.getName().equals( ATermUtils.MAXFUN.getName() ) ) {
 	                sb.append( ATermUtils.MINFUN.getName() );
                 }
-                else if( !fun.equals( ATermUtils.NOTFUN ) ) {
-					if( fun.equals( ATermUtils.VALUEFUN ) 
-						|| fun.equals( ATermUtils.RESTRDATATYPEFUN )) {
+                else if( !fun.getName().equals( ATermUtils.NOTFUN.getName() ) ) {
+					if( fun.getName().equals( ATermUtils.VALUEFUN.getName() ) 
+						|| fun.getName().equals( ATermUtils.RESTRDATATYPEFUN.getName() )) {
 	                    sb.append( "not(" );
                     }
 					sb.append( fun.getName() );
@@ -866,10 +866,10 @@ public class ATermUtils {
 			}
 			
 			Bool negatedRecurse = negated;
-			if( negated.isKnown() && fun.equals( ATermUtils.MINFUN ) || fun.equals( ATermUtils.MAXFUN ) ) {
+			if( negated.isKnown() && fun.getName().equals( ATermUtils.MINFUN.getName() ) || fun.getName().equals( ATermUtils.MAXFUN.getName() ) ) {
 				negatedRecurse = Bool.FALSE;
 			}
-			else if( fun.equals( ATermUtils.NOTFUN ) ) {
+			else if( fun.getName().equals( ATermUtils.NOTFUN.getName() ) ) {
 				negatedRecurse = negated.not();
 			}
 
@@ -897,10 +897,10 @@ public class ATermUtils {
 				else {
 					int value = ((ATermInt) arg).getInt();
 					if( negated.isTrue() ) {
-						if( fun.equals( ATermUtils.MINFUN ) ) {
+						if( fun.getName().equals( ATermUtils.MINFUN.getName() ) ) {
 	                        value--;
                         }
-                        else if( fun.equals( ATermUtils.MAXFUN ) ) {
+                        else if( fun.getName().equals( ATermUtils.MAXFUN.getName() ) ) {
 	                        value++;
                         }
 					}
@@ -908,8 +908,8 @@ public class ATermUtils {
 				}
 			}
 			sb.append( ")" );
-			if( (fun.equals( ATermUtils.VALUEFUN ) 
-				|| fun.equals( ATermUtils.RESTRDATATYPEFUN )) && negated.isTrue() ) {
+			if( (fun.getName().equals( ATermUtils.VALUEFUN.getName() ) 
+				|| fun.getName().equals( ATermUtils.RESTRDATATYPEFUN.getName() )) && negated.isTrue() ) {
 	            sb.append( ")" );
             }
 		}
@@ -944,11 +944,11 @@ public class ATermUtils {
 	}
 
 	public static final boolean isBnode(ATermAppl name) {
-		return name.getAFun().equals( BNODE_FUN );
+		return name.getAFun().getName().equals( BNODE_FUN.getName() );
 	}
 
 	public static final boolean isAnon(ATermAppl term) {
-		return term.getAFun().equals( ANON_FUN );
+		return term.getAFun().getName().equals( ANON_FUN.getName() );
 	}
 	
 	public static final boolean isBuiltinProperty(ATermAppl name) {
@@ -999,40 +999,40 @@ public class ATermUtils {
 	}
 
 	final static public boolean isInv(ATermAppl r) {
-		return r.getAFun().equals( INVFUN );
+		return r.getAFun().getName().equals( INVFUN.getName() );
 	}
 
 	public final static boolean isAnd(ATermAppl a) {
-		return a.getAFun().equals( ANDFUN );
+		return a.getAFun().getName().equals( ANDFUN.getName() );
 	}
 
 	public final static boolean isOr(ATermAppl a) {
-		return a.getAFun().equals( ORFUN );
+		return a.getAFun().getName().equals( ORFUN.getName() );
 	}
 
 	public final static boolean isAllValues(ATermAppl a) {
-		return a.getAFun().equals( ALLFUN );
+		return a.getAFun().getName().equals( ALLFUN.getName() );
 	}
 
 	public final static boolean isSomeValues(ATermAppl a) {
-		return a.getAFun().equals( SOMEFUN );
+		return a.getAFun().getName().equals( SOMEFUN.getName() );
 	}
 
 	public final static boolean isSelf(ATermAppl a) {
-		return a.getAFun().equals( SELFFUN );
+		return a.getAFun().getName().equals( SELFFUN.getName() );
 	}
 
 	public final static boolean isHasValue(ATermAppl a) {
-		return a.getAFun().equals( SOMEFUN )
-				&& ((ATermAppl) a.getArgument( 1 )).getAFun().equals( VALUEFUN );
+		return a.getAFun().getName().equals( SOMEFUN.getName() )
+				&& ((ATermAppl) a.getArgument( 1 )).getAFun().getName().equals( VALUEFUN.getName() );
 	}
 
 	public final static boolean isNominal(ATermAppl a) {
-		return a.getAFun().equals( VALUEFUN );
+		return a.getAFun().getName().equals( VALUEFUN.getName() );
 	}
 
 	public final static boolean isOneOf(ATermAppl a) {
-		if( !a.getAFun().equals( ORFUN ) ) {
+		if( !a.getAFun().getName().equals( ORFUN.getName() ) ) {
 	        return false;
         }
 
@@ -1047,7 +1047,7 @@ public class ATermUtils {
 	}
 
 	public final static boolean isDataRange(ATermAppl a) {
-		if( !a.getAFun().equals( ORFUN ) ) {
+		if( !a.getAFun().getName().equals( ORFUN.getName() ) ) {
 	        return false;
         }
 
@@ -1063,15 +1063,15 @@ public class ATermUtils {
 	}
 
 	public final static boolean isNot(ATermAppl a) {
-		return a.getAFun().equals( NOTFUN );
+		return a.getName().equals( NOTFUN.getName() );
 	}
 
 	public final static boolean isMax(ATermAppl a) {
-		return a.getAFun().equals( MAXFUN );
+		return a.getName().equals( MAXFUN.getName() );
 	}
 
 	public final static boolean isMin(ATermAppl a) {
-		return a.getAFun().equals( MINFUN );
+		return a.getName().equals( MINFUN.getName() );
 	}
 
 	public final static boolean isCard(ATermAppl a) {
@@ -1087,11 +1087,11 @@ public class ATermUtils {
 	}
 
 	public final static boolean isLiteral(ATermAppl a) {
-		return a.getAFun().equals( LITFUN );
+		return a.getName().equals( LITFUN.getName() );
 	}
 
 	final static public boolean isVar(ATermAppl a) {
-		return a.getAFun().equals( VARFUN );
+		return a.getName().equals( VARFUN.getName() );
 	}
 
 	final static public boolean isTransitiveChain(ATermList chain, ATerm r) {
@@ -1108,11 +1108,11 @@ public class ATermUtils {
 	}
 
 	public final static boolean isPropertyAssertion(ATermAppl a) {
-		return a.getAFun().equals( PROPFUN );
+		return a.getAFun().getName().equals( PROPFUN.getName() );
 	}
 
 	public final static boolean isTypeAssertion(ATermAppl a) {
-		return a.getAFun().equals( TYPEFUN );
+		return a.getAFun().getName().equals( TYPEFUN.getName() );
 	}
 
 	public static ATerm nnf(ATerm term) {
@@ -1145,7 +1145,7 @@ public class ATermUtils {
 
 		AFun af = term.getAFun();
 
-		if( af.equals( ATermUtils.NOTFUN ) ) { // Function is a NOT
+		if( af.getName().equals( ATermUtils.NOTFUN.getName() ) ) { // Function is a NOT
 			// Take the first argument to the NOT, then check
 			// the type of that argument to determine what needs to be done.
 			ATermUtils.assertTrue( af.getArity() == 1 );
@@ -1155,18 +1155,18 @@ public class ATermUtils {
 			if( arg.getArity() == 0 ) {
 				newterm = term; // Negation is in as far as it can go
 			}
-			else if( af.equals( ATermUtils.NOTFUN ) ) { // Double negation.
+			else if( af.getName().equals( ATermUtils.NOTFUN.getName() ) ) { // Double negation.
 				newterm = nnf( (ATermAppl) arg.getArgument( 0 ) );
 			}
-			else if( af.equals( ATermUtils.VALUEFUN ) || af.equals( ATermUtils.SELFFUN )  || af.equals( ATermUtils.RESTRDATATYPEFUN ) ) {
+			else if( af.getName().equals( ATermUtils.VALUEFUN.getName() ) || af.getName().equals( ATermUtils.SELFFUN.getName() )  || af.getName().equals( ATermUtils.RESTRDATATYPEFUN.getName() ) ) {
 				newterm = term;
 			}
-			else if( af.equals( ATermUtils.MAXFUN ) ) {
+			else if( af.getName().equals( ATermUtils.MAXFUN.getName() ) ) {
 				ATermInt n = (ATermInt) arg.getArgument( 1 );
 				newterm = ATermUtils.makeMin( arg.getArgument( 0 ), n.getInt() + 1, nnf( arg
 						.getArgument( 2 ) ) );
 			}
-			else if( af.equals( ATermUtils.MINFUN ) ) {
+			else if( af.getName().equals( ATermUtils.MINFUN.getName() ) ) {
 				ATermInt n = (ATermInt) arg.getArgument( 1 );
 				if( n.getInt() == 0 ) {
 	                newterm = ATermUtils.BOTTOM;
@@ -1176,22 +1176,22 @@ public class ATermUtils {
 							.getArgument( 2 ) ) );
                 }
 			}
-			else if( af.equals( ATermUtils.CARDFUN ) ) {
+			else if( af.getName().equals( ATermUtils.CARDFUN.getName() ) ) {
 				newterm = nnf( makeNot( makeExactCard( arg.getArgument( 0 ), ((ATermInt) arg
 						.getArgument( 1 )), arg.getArgument( 2 ) ) ) );
 			}
-			else if( af.equals( ATermUtils.ANDFUN ) ) {
+			else if( af.getName().equals( ATermUtils.ANDFUN.getName() ) ) {
 				newterm = ATermUtils.makeOr( nnf( negate( (ATermList) arg.getArgument( 0 ) ) ) );
 			}
-			else if( af.equals( ATermUtils.ORFUN ) ) {
+			else if( af.getName().equals( ATermUtils.ORFUN.getName() ) ) {
 				newterm = ATermUtils.makeAnd( nnf( negate( (ATermList) arg.getArgument( 0 ) ) ) );
 			}
-			else if( af.equals( ATermUtils.SOMEFUN ) ) {
+			else if( af.getName().equals( ATermUtils.SOMEFUN.getName() ) ) {
 				ATerm p = arg.getArgument( 0 );
 				ATerm c = arg.getArgument( 1 );
 				newterm = ATermUtils.makeAllValues( p, nnf( makeNot( c ) ) );
 			}
-			else if( af.equals( ATermUtils.ALLFUN ) ) {
+			else if( af.getName().equals( ATermUtils.ALLFUN.getName() ) ) {
 				ATerm p = arg.getArgument( 0 );
 				ATerm c = arg.getArgument( 1 );
 				newterm = ATermUtils.makeSomeValues( p, nnf( makeNot( c ) ) );
@@ -1200,11 +1200,11 @@ public class ATermUtils {
 				throw new InternalReasonerException( "Unknown term type: " + term );
 			}
 		}
-		else if( af.equals( ATermUtils.MINFUN ) || af.equals( ATermUtils.MAXFUN )
-				|| af.equals( ATermUtils.SELFFUN ) ) {
+		else if( af.getName().equals( ATermUtils.MINFUN.getName() ) || af.getName().equals( ATermUtils.MAXFUN.getName() )
+				|| af.getName().equals( ATermUtils.SELFFUN.getName() ) ) {
 			newterm = term;
 		}
-		else if( af.equals( ATermUtils.CARDFUN ) ) {
+		else if( af.getName().equals( ATermUtils.CARDFUN.getName() ) ) {
 			newterm = nnf( makeExactCard( term.getArgument( 0 ),
 					((ATermInt) term.getArgument( 1 )), term.getArgument( 2 ) ) );
 		}
@@ -1268,37 +1268,37 @@ public class ATermUtils {
 			? term.getArgument( 2 )
 			: null;
 
-		if( arg1 == null || fun.equals( SELFFUN ) || fun.equals( VALUEFUN ) || fun.equals( INVFUN ) 
-			|| fun.equals( RESTRDATATYPEFUN ) ) {
+		if( arg1 == null || fun.getName().equals( SELFFUN.getName() ) || fun.getName().equals( VALUEFUN.getName() ) || fun.getName().equals( INVFUN.getName() ) 
+			|| fun.getName().equals( RESTRDATATYPEFUN.getName() ) ) {
 			// do nothing because these terms cannot be decomposed any further
 		}
-		else if( fun.equals( NOTFUN ) ) {
+		else if( fun.getName().equals( NOTFUN.getName() ) ) {
 			if( !isPrimitive( (ATermAppl) arg1 ) ) {
 	            norm = simplify( makeNot( normalize( (ATermAppl) arg1 ) ) );
             }
 		}
-		else if( fun.equals( ANDFUN ) ) {
+		else if( fun.getName().equals( ANDFUN.getName() ) ) {
 			norm = simplify( makeAnd( normalize( (ATermList) arg1 ) ) );
 		}
-		else if( fun.equals( ORFUN ) ) {
+		else if( fun.getName().equals( ORFUN.getName() ) ) {
 			ATermList neg = negate( (ATermList) arg1 );
 			ATermAppl and = makeAnd( neg );
 			ATermAppl notAnd = makeNot( and );
 			norm = normalize( notAnd );
 		}
-		else if( fun.equals( ALLFUN ) ) {
+		else if( fun.getName().equals( ALLFUN.getName() ) ) {
 			norm = simplify( makeAllValues( arg1, normalize( (ATermAppl) arg2 ) ) );
 		}
-		else if( fun.equals( SOMEFUN ) ) {
+		else if( fun.getName().equals( SOMEFUN.getName() ) ) {
 			norm = normalize( makeNot( makeAllValues( arg1, makeNot( arg2 ) ) ) );
 		}
-		else if( fun.equals( MAXFUN ) ) {
+		else if( fun.getName().equals( MAXFUN.getName() ) ) {
 			norm = normalize( makeNot( makeMin( arg1, ((ATermInt) arg2).getInt() + 1, arg3 ) ) );
 		}
-		else if( fun.equals( MINFUN ) ) {
+		else if( fun.getName().equals( MINFUN.getName() ) ) {
 			norm = simplify( makeMin( arg1, (ATermInt) arg2, normalize( (ATermAppl) arg3 ) ) );
 		}
-		else if( fun.equals( CARDFUN ) ) {
+		else if( fun.getName().equals( CARDFUN.getName() ) ) {
 			ATermAppl normMin = simplify( makeMin( arg1, ((ATermInt) arg2).getInt(),
 					normalize( (ATermAppl) arg3 ) ) );
 			ATermAppl normMax = normalize( makeMax( arg1, ((ATermInt) arg2).getInt(), arg3 ) );
@@ -1338,10 +1338,10 @@ public class ATermUtils {
 			? term.getArgument( 2 )
 			: null;
 
-		if( arg1 == null || fun.equals( SELFFUN ) || fun.equals( VALUEFUN ) || fun.equals( ATermUtils.RESTRDATATYPEFUN ) ) {
+		if( arg1 == null || fun.getName().equals( SELFFUN.getName() ) || fun.getName().equals( VALUEFUN.getName() ) || fun.getName().equals( ATermUtils.RESTRDATATYPEFUN.getName() ) ) {
 			// do nothing because term is primitive or self restriction
 		}
-		else if( fun.equals( NOTFUN ) ) {
+		else if( fun.getName().equals( NOTFUN.getName() ) ) {
 			ATermAppl arg = (ATermAppl) arg1;
 			if( isNot( arg ) ) {
 	            simp = simplify( (ATermAppl) arg.getArgument( 0 ) );
@@ -1353,7 +1353,7 @@ public class ATermUtils {
                 }
 			}
 		}
-		else if( fun.equals( ANDFUN ) ) {
+		else if( fun.getName().equals( ANDFUN.getName() ) ) {
 			ATermList conjuncts = (ATermList) arg1;
 			if( conjuncts.isEmpty() ) {
 	            simp = TOP;
@@ -1407,12 +1407,12 @@ public class ATermUtils {
 				simp = makeAnd( toSet( terms, size ) );
 			}
 		}
-		else if( fun.equals( ALLFUN ) ) {
+		else if( fun.getName().equals( ALLFUN.getName() ) ) {
 			if( arg2.equals( TOP ) ) {
 	            simp = TOP;
             }
 		}
-		else if( fun.equals( MINFUN ) ) {
+		else if( fun.getName().equals( MINFUN.getName() ) ) {
 			ATermInt n = (ATermInt) arg2;
 			if( n.getInt() == 0 ) {
 	            simp = TOP;
@@ -1421,7 +1421,7 @@ public class ATermUtils {
 	            simp = BOTTOM;
             }
 		}
-		else if( fun.equals( MAXFUN ) ) {
+		else if( fun.getName().equals( MAXFUN.getName() ) ) {
 			ATermInt n = (ATermInt) arg2;
 			if( n.getInt() > 0 && arg3.equals( ATermUtils.BOTTOM ) ) {
 	            simp = TOP;
@@ -1518,16 +1518,16 @@ public class ATermUtils {
 		if( isPrimitive( term ) ) {
 			primitives.add( term );
 		}
-		else if( fun.equals( SELFFUN ) || fun.equals( VALUEFUN ) || fun.equals( RESTRDATATYPEFUN ) ) {
+		else if( fun.getName().equals( SELFFUN.getName() ) || fun.getName().equals( VALUEFUN.getName() ) || fun.getName().equals( RESTRDATATYPEFUN.getName() ) ) {
 			// do nothing because there is no atomic concept here
 		}
-		else if( fun.equals( NOTFUN ) ) {
+		else if( fun.getName().equals( NOTFUN.getName() ) ) {
 			ATermAppl arg = (ATermAppl) term.getArgument( 0 );
 			if( !isPrimitive( arg ) || !skipTopLevel ) {
 	            findPrimitives( arg, primitives, skipRestrictions, false );
             }
 		}
-		else if( fun.equals( ANDFUN ) || fun.equals( ORFUN ) ) {
+		else if( fun.getName().equals( ANDFUN.getName() ) || fun.getName().equals( ORFUN.getName() ) ) {
 			ATermList list = (ATermList) term.getArgument( 0 );
 			while( !list.isEmpty() ) {
 				ATermAppl arg = (ATermAppl) list.getFirst();
@@ -1538,11 +1538,11 @@ public class ATermUtils {
 			}
 		}
 		else if( !skipRestrictions ) {
-			if( fun.equals( ALLFUN ) || fun.equals( SOMEFUN ) ) {
+			if( fun.getName().equals( ALLFUN.getName() ) || fun.getName().equals( SOMEFUN.getName() ) ) {
 				ATermAppl arg = (ATermAppl) term.getArgument( 1 );
 				findPrimitives( arg, primitives, skipRestrictions, false );
 			}
-			else if( fun.equals( MAXFUN ) || fun.equals( MINFUN ) || fun.equals( CARDFUN ) ) {
+			else if( fun.getName().equals( MAXFUN.getName() ) || fun.getName().equals( MINFUN.getName() ) || fun.getName().equals( CARDFUN.getName() ) ) {
 				ATermAppl arg = (ATermAppl) term.getArgument( 2 );
 				findPrimitives( arg, primitives, skipRestrictions, false );
 			}
