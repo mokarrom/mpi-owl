@@ -4528,7 +4528,7 @@ public class KnowledgeBase {
 			}							
 		}		
 
-		return new MPIALCStrategy( abox );
+		return new MPIALCStrategy( abox, expressivity );
 	}
 
 	/**

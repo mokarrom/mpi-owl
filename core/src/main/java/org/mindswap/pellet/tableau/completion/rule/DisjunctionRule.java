@@ -126,7 +126,7 @@ public class DisjunctionRule extends AbstractTableauRule {
 		DependencySet lastClashDepends = null;
 		
 		if( log.isLoggable( Level.FINE ) )  
-            log.fine( "ABox branch : (" + abox.getBranch() + ") Node: " + node + " : apply disjunction rule on " + ATermUtils.toString(disjunction) );
+            log.fine( "Rank # "+MPI.COMM_WORLD.Rank() +" : ABox branch : (" + abox.getBranch() + ") Node: " + node + " : apply disjunction rule on " + ATermUtils.toString(disjunction) );
 		
 		for ( j = 0; j < disjLength; j++) {
 			ATermAppl d = disj[j];
@@ -135,7 +135,7 @@ public class DisjunctionRule extends AbstractTableauRule {
 			DependencySet clashDepends = node.getDepends(notD);
 			if(clashDepends == null) {
 				if( log.isLoggable( Level.FINE ) )  
-	                log.fine( "CURRENT# DISJ: Branch (" + abox.getBranch() + ") Node: " + node + " : adding concept: " +  ATermUtils.toString( d ) + " OF " + ATermUtils.toString(disjunction) );
+	                log.fine( "Rank # "+MPI.COMM_WORLD.Rank() +" : CURRENT# DISJ: Branch (" + abox.getBranch() + ") Node: " + node + " : adding concept: " +  ATermUtils.toString( d ) + " OF " + ATermUtils.toString(disjunction) );
 			    strategy.addType(node, d, ds);
 				// we may still find a clash if concept is allValuesFrom
 				// and there are some conflicting edges
@@ -152,7 +152,7 @@ public class DisjunctionRule extends AbstractTableauRule {
 				lastClashDepends = clashDepends;
 				if( log.isLoggable( Level.FINE ) ) {
 					Clash clash = abox.isClosed() ? abox.getClash() : Clash.atomic(node, clashDepends, d);
-		            log.fine("CURRENT# CLASH (C): Branch " + abox.getBranch() + " " + clash + "!" + " " + clashDepends.getExplain());
+		            log.fine("Rank # "+MPI.COMM_WORLD.Rank() +" : CURRENT# CLASH (C): Branch " + abox.getBranch() + " " + clash + "!" + " " + clashDepends.getExplain());
 				}
 			}
 			else {
@@ -180,7 +180,7 @@ public class DisjunctionRule extends AbstractTableauRule {
 			
 			if(clashDepends == null) {	
 				if( log.isLoggable( Level.FINE ) )  
-	                log.fine( "FUTURE# DISJ: Branch (" + newAbox.getBranch() + ") Node: " + node + " : adding concept: " +  ATermUtils.toString( d ) + " OF " + ATermUtils.toString(disjunction) );
+	                log.fine( "Rank # "+MPI.COMM_WORLD.Rank() +" : FUTURE# DISJ: Branch (" + newAbox.getBranch() + ") Node: " + node + " : adding concept: " +  ATermUtils.toString( d ) + " OF " + ATermUtils.toString(disjunction) );
 			    strategy.addType(newNode, d, ds);
 				// we may still find a clash if concept is allValuesFrom
 				// and there are some conflicting edges
@@ -195,14 +195,14 @@ public class DisjunctionRule extends AbstractTableauRule {
 			if(clashDepends != null) {
 				if( log.isLoggable( Level.FINE ) ) {
 					Clash clash = newAbox.isClosed() ? newAbox.getClash() : Clash.atomic(newNode, clashDepends, d);
-		            log.fine("FUTURE# CLASH: Branch " + newAbox.getBranch() + " " + clash + "!" + " " + clashDepends.getExplain());
+		            log.fine("Rank # "+MPI.COMM_WORLD.Rank() +" : FUTURE# CLASH: Branch " + newAbox.getBranch() + " " + clash + "!" + " " + clashDepends.getExplain());
 				}
 				newAbox = null;
 			}
 			else {	
 				newAbox.incrementBranch();
 				if( log.isLoggable( Level.FINE ) ) {
-		            log.fine("New ABox# DISJ: Branch (" + newAbox.getBranch() + ") is sending to the Manager." );
+		            log.fine("Rank # "+MPI.COMM_WORLD.Rank() +" : New ABox# DISJ: Branch (" + newAbox.getBranch() + ") is sending to the Manager." );
 				}
 				//MASTER = 0;	NEW_ABOX_TAG = 204;		NEW_ABOX = 205
 				int wCount[] = new int[1];

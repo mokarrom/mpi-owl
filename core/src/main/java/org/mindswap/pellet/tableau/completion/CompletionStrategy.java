@@ -391,11 +391,11 @@ public abstract class CompletionStrategy {
 	public void initialize (ABox abox) {
 		this.abox = abox;
 		
-		this.abox.setBranch(abox.getBranches().size() + 1);
-		this.abox.stats.treeDepth = 1;
-		this.abox.setChanged(true);
-		this.abox.setComplete(false);
-		this.abox.setInitialized(true);
+//		this.abox.setBranch(abox.getBranches().size() + 1);
+//		this.abox.stats.treeDepth = 1;
+//		this.abox.setChanged(true);
+//		this.abox.setComplete(false);
+//		this.abox.setInitialized(true);
 	}
 
 	/**

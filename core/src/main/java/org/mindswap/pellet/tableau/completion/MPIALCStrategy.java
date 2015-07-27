@@ -31,16 +31,19 @@ public class MPIALCStrategy extends CompletionStrategy {
 	static final int NEW_ABOX_TAG 	= 204;
 	static final int NEW_ABOX 		= 205;
 	
+	public Expressivity expr;
+	
 	protected List<ABox> aboxList;
 	protected List<ABox> closedAboxList;
 	
-	public MPIALCStrategy(ABox abox) {
+	public MPIALCStrategy(ABox abox, Expressivity expressivity) {
 		super( abox );
+		this.expr = expressivity;
 	}
 	
 	public void complete(Expressivity expr) {
-		
-		initialize( expr );
+		//System.out.println("My rank = "+MPI.COMM_WORLD.Rank());  return;
+		//initialize( expr );
 		
 		int rank = MPI.COMM_WORLD.Rank();
 		int numProcs = MPI.COMM_WORLD.Size();
@@ -48,26 +51,26 @@ public class MPIALCStrategy extends CompletionStrategy {
 		KryoSerializer.register();
 		
 		if (rank == MASTER) {
-			System.out.println("Maanager");
+			//System.out.println("Maanager");
 			//initialize( expr );
-			//mpiOwlManager (numProcs - 1);
+			mpiOwlManager (numProcs - 1);
 
-			int size[] = new int[1];
+			/*int size[] = new int[1];
 			byte sByteArray[] = KryoSerializer.serialize(abox);	//Serializer.serialize (abox);
 			size[0] = sByteArray.length; System.out.println("Master : Length "+sByteArray.length); //KryoSerializer.ByteHex(sByteArray);
 			MPI.COMM_WORLD.Send(size, 0, 1, MPI.INT, 1, CHECK_TAG);
-			MPI.COMM_WORLD.Send(sByteArray, 0, size[0], MPI.BYTE, 1, ABOX);
+			MPI.COMM_WORLD.Send(sByteArray, 0, size[0], MPI.BYTE, 1, ABOX);*/
 		}
 		else {
-			System.out.println("Worker");
-			//mpiOwlWorker();
+			//System.out.println("Worker");
+			mpiOwlWorker();
 			
-			int count[] = new int[1];		
+			/*int count[] = new int[1];		
 			MPI.COMM_WORLD.Recv(count, 0, 1, MPI.INT, MPI.ANY_SOURCE, CHECK_TAG);
 			byte rByteArray[] = new byte[count[0]];		
 			Status st = MPI.COMM_WORLD.Recv(rByteArray, 0, count[0], MPI.BYTE, MPI.ANY_SOURCE, ABOX);System.out.println("Worker : Length "+rByteArray.length);//KryoSerializer.ByteHex(rByteArray);
 			ABox a = (ABox) KryoSerializer.deserialize(rByteArray, ABox.class);	//Serializer.deserialize(rByteArray);
-			System.out.println("Object received");
+			System.out.println("Object received");*/
 		}
 	}
 	
@@ -132,9 +135,21 @@ public class MPIALCStrategy extends CompletionStrategy {
 			MPI.COMM_WORLD.Send(mDummy, 0, 0, MPI.INT, mStatus.source, STOP_TAG);
 		}
 		
+		if (isCompleted) {
+			System.out.println("### Given ABox is cmplete!");
+		}
+		else if (isClosed) {
+			System.out.println("### Given ABox is closed!");
+		}
+		else {
+			System.out.println("### Should not print!");
+		}
 	}
 	
 	public void mpiOwlWorker() {
+		if( log.isLoggable( Level.FINE ) )
+			log.fine( "Worker " + MPI.COMM_WORLD.Rank() + " has started" );
+		
 		int[] wSize = new int[1];
 		int[] wDummy = new int[1];		
 		
@@ -149,7 +164,7 @@ public class MPIALCStrategy extends CompletionStrategy {
 				MPI.COMM_WORLD.Recv(byteArray, 0, wSize[0], MPI.BYTE, MASTER, ABOX);
 				
 				ABox wABox = (ABox) KryoSerializer.deserialize (byteArray, ABox.class);
-				
+
 				boolean isConsistent;
 				if (wABox != null) {
 					isConsistent = mpiIsConsistent (wABox);
@@ -168,7 +183,7 @@ public class MPIALCStrategy extends CompletionStrategy {
 			}
 			else if (wStatus.tag == WAIT_TAG) {
 				try {
-				    Thread.sleep(10000);                 //1000 milliseconds is one second.
+				    Thread.sleep(300);                 //1000 milliseconds is one second.
 				} catch(InterruptedException ex) {
 				    Thread.currentThread().interrupt();
 				}
@@ -182,11 +197,17 @@ public class MPIALCStrategy extends CompletionStrategy {
 			wSize[0] = 0;
 			wStatus = MPI.COMM_WORLD.Recv(wSize, 0, 1, MPI.INT, MASTER, MPI.ANY_TAG);
 		}
+		
+		if( log.isLoggable( Level.FINE ) )
+			log.fine( "Worker " +MPI.COMM_WORLD.Rank() + " has terminated" );
 	}
 	
 	public boolean mpiIsConsistent (ABox abox) {
-		System.out.println("Rank "+MPI.COMM_WORLD.Rank()+" : Consistency checking on "+abox.toString());
+		if( log.isLoggable( Level.FINE ) )
+			log.fine( "### Worker "+MPI.COMM_WORLD.Rank() +" : Checking consistency on Branch ("+abox.getBranch() + ")" );
+		
 		initialize (abox);
+		initialize(expr);
 		
 		while( abox.isChanged() && !abox.isClosed() ) {
 			completionTimer.check();

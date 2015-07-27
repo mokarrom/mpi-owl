@@ -10,11 +10,13 @@ import com.esotericsoftware.kryo.io.Output;
 public class RoleSerializer extends Serializer<Role> {
     @Override
     public void write(Kryo kryo, Output output, Role object) {
-        kryo.writeClassAndObject(output, object);
+        //kryo.writeClassAndObject(output, object);
+    	kryo.writeObject(output, object);
     }
 
     @Override
     public Role read(Kryo kryo, Input input, Class<Role> type) {
-        return (Role) kryo.readClassAndObject(input);
+        //return (Role) kryo.readClassAndObject(input);
+    	return (Role) kryo.readObject(input, Role.class);
     }
 }
