@@ -20,6 +20,7 @@ import com.clarkparsia.pellet.expressivity.Expressivity;
 
 public class MPIALCStrategy extends CompletionStrategy {
 	
+	static final int dummy 			= 111;
 	static final int MASTER 		= 0;
 	static final int CHECK_TAG 		= 101;
 	static final int WAIT_TAG 		= 102;
@@ -32,6 +33,7 @@ public class MPIALCStrategy extends CompletionStrategy {
 	static final int NEW_ABOX 		= 205;
 	
 	public Expressivity expr;
+	private int myRank = -1;
 	
 	protected List<ABox> aboxList;
 	protected List<ABox> closedAboxList;
@@ -45,12 +47,12 @@ public class MPIALCStrategy extends CompletionStrategy {
 		//System.out.println("My rank = "+MPI.COMM_WORLD.Rank());  return;
 		//initialize( expr );
 		
-		int rank = MPI.COMM_WORLD.Rank();
+		myRank = MPI.COMM_WORLD.Rank();
 		int numProcs = MPI.COMM_WORLD.Size();
 		
 		KryoSerializer.register();
 		
-		if (rank == MASTER) {
+		if (myRank == MASTER) {
 			//System.out.println("Maanager");
 			//initialize( expr );
 			mpiOwlManager (numProcs - 1);
@@ -78,8 +80,8 @@ public class MPIALCStrategy extends CompletionStrategy {
 		aboxList = new ArrayList<ABox>();
 		closedAboxList = new ArrayList<ABox>();
 		ABox[] D = new ABox[numOfWorker + 1];	//Index 0 will never be used. It is reserved for Master.
-		int[] mSize = new int[1];
-		int[] mDummy = new int[1];
+		int[] rBuf = new int[1];
+		int[] sDummyBuf = new int[1];
 		
 		aboxList.add(abox);
 		
@@ -87,9 +89,10 @@ public class MPIALCStrategy extends CompletionStrategy {
 		
 		Status mStatus;
 		int ptr = 0;
+		sDummyBuf[0] = dummy;
 		
 		while (!isCompleted && !isClosed) {
-			mStatus = MPI.COMM_WORLD.Recv(mSize, 0, 1, MPI.INT, MPI.ANY_SOURCE, MPI.ANY_TAG);
+			mStatus = MPI.COMM_WORLD.Recv(rBuf, 0, 1, MPI.INT, MPI.ANY_SOURCE, MPI.ANY_TAG);
 			if (mStatus.tag == WORK_REQ_TAG) {
 				if (ptr < aboxList.size()) {
 					ABox sABox = aboxList.get(ptr);
@@ -102,12 +105,12 @@ public class MPIALCStrategy extends CompletionStrategy {
 					ptr++;
 				}
 				else {
-					MPI.COMM_WORLD.Send(mDummy, 0, 0, MPI.INT, mStatus.source, WAIT_TAG);
+					MPI.COMM_WORLD.Send(sDummyBuf, 0, 1, MPI.INT, mStatus.source, WAIT_TAG);
 				}
 			}
 			else if (mStatus.tag == NEW_ABOX_TAG) {
-				byte byteArray[] = new byte[mSize[0]];
-				MPI.COMM_WORLD.Recv(byteArray, 0, mSize[0], MPI.BYTE, mStatus.source, NEW_ABOX);
+				byte byteArray[] = new byte[rBuf[0]];
+				MPI.COMM_WORLD.Recv(byteArray, 0, rBuf[0], MPI.BYTE, mStatus.source, NEW_ABOX);
 				ABox mABox = (ABox) KryoSerializer.deserialize (byteArray, ABox.class);
 				aboxList.add(mABox);	
 			}
@@ -131,8 +134,8 @@ public class MPIALCStrategy extends CompletionStrategy {
  		}
 		
 		for (int j = 0; j < numOfWorker; j++) {
-			mStatus = MPI.COMM_WORLD.Recv(mDummy, 0, 0, MPI.INT, MPI.ANY_SOURCE, MPI.ANY_TAG);
-			MPI.COMM_WORLD.Send(mDummy, 0, 0, MPI.INT, mStatus.source, STOP_TAG);
+			mStatus = MPI.COMM_WORLD.Recv(sDummyBuf, 0, 1, MPI.INT, MPI.ANY_SOURCE, MPI.ANY_TAG);
+			MPI.COMM_WORLD.Send(sDummyBuf, 0, 1, MPI.INT, mStatus.source, STOP_TAG);
 		}
 		
 		if (isCompleted) {
@@ -148,20 +151,21 @@ public class MPIALCStrategy extends CompletionStrategy {
 	
 	public void mpiOwlWorker() {
 		if( log.isLoggable( Level.FINE ) )
-			log.fine( "Worker " + MPI.COMM_WORLD.Rank() + " has started" );
+			log.fine( "Worker " + myRank + " has started" );
 		
-		int[] wSize = new int[1];
-		int[] wDummy = new int[1];		
+		int[] rBuf = new int[1];
+		int[] sDummyBuf = new int[1];		
 		
-		MPI.COMM_WORLD.Send(wDummy, 0, 0, MPI.INT, MASTER, WORK_REQ_TAG);
-		Status wStatus = MPI.COMM_WORLD.Recv(wSize, 0, 1, MPI.INT, MASTER, MPI.ANY_TAG);
+		sDummyBuf[0] = dummy;
+		MPI.COMM_WORLD.Send(sDummyBuf, 0, 1, MPI.INT, MASTER, WORK_REQ_TAG);
+		Status wStatus = MPI.COMM_WORLD.Recv(rBuf, 0, 1, MPI.INT, MASTER, MPI.ANY_TAG);
 	
 		while (wStatus.tag != STOP_TAG) {
 			if (wStatus.tag == CHECK_TAG) {
 				
-				byte byteArray[] = new byte[wSize[0]];
+				byte byteArray[] = new byte[rBuf[0]];
 				
-				MPI.COMM_WORLD.Recv(byteArray, 0, wSize[0], MPI.BYTE, MASTER, ABOX);
+				MPI.COMM_WORLD.Recv(byteArray, 0, rBuf[0], MPI.BYTE, MASTER, ABOX);
 				
 				ABox wABox = (ABox) KryoSerializer.deserialize (byteArray, ABox.class);
 
@@ -169,13 +173,13 @@ public class MPIALCStrategy extends CompletionStrategy {
 				if (wABox != null) {
 					isConsistent = mpiIsConsistent (wABox);
 					if (isConsistent) {
-						MPI.COMM_WORLD.Send(wDummy, 0, 0, MPI.INT, MASTER, COMPLETE_TAG);
+						MPI.COMM_WORLD.Send(sDummyBuf, 0, 1, MPI.INT, MASTER, COMPLETE_TAG);
 					}
 					else {
-						MPI.COMM_WORLD.Send(wDummy, 0, 0, MPI.INT, MASTER, CLASH_TAG);
+						MPI.COMM_WORLD.Send(sDummyBuf, 0, 1, MPI.INT, MASTER, CLASH_TAG);
 					}
 					
-					MPI.COMM_WORLD.Send(wDummy, 0, 0, MPI.INT, MASTER, WORK_REQ_TAG);
+					MPI.COMM_WORLD.Send(sDummyBuf, 0, 1, MPI.INT, MASTER, WORK_REQ_TAG);
 				}
 				else {
 					System.out.println("Error: wABox null");
@@ -183,28 +187,28 @@ public class MPIALCStrategy extends CompletionStrategy {
 			}
 			else if (wStatus.tag == WAIT_TAG) {
 				try {
-				    Thread.sleep(300);                 //1000 milliseconds is one second.
+				    Thread.sleep(1000);                 //1000 milliseconds is one second. Should not be very less or high.
 				} catch(InterruptedException ex) {
 				    Thread.currentThread().interrupt();
 				}
 				
-				MPI.COMM_WORLD.Send(wDummy, 0, 0, MPI.INT, MASTER, WORK_REQ_TAG);
+				MPI.COMM_WORLD.Send(sDummyBuf, 0, 1, MPI.INT, MASTER, WORK_REQ_TAG);
 			}
 			else {
 				System.out.println("Error: Invalid TAG");
 			}
 			
-			wSize[0] = 0;
-			wStatus = MPI.COMM_WORLD.Recv(wSize, 0, 1, MPI.INT, MASTER, MPI.ANY_TAG);
+			rBuf[0] = 0;
+			wStatus = MPI.COMM_WORLD.Recv(rBuf, 0, 1, MPI.INT, MASTER, MPI.ANY_TAG);
 		}
 		
 		if( log.isLoggable( Level.FINE ) )
-			log.fine( "Worker " +MPI.COMM_WORLD.Rank() + " has terminated" );
+			log.fine( "Worker " +myRank + " has terminated" );
 	}
 	
 	public boolean mpiIsConsistent (ABox abox) {
 		if( log.isLoggable( Level.FINE ) )
-			log.fine( "### Worker "+MPI.COMM_WORLD.Rank() +" : Checking consistency on Branch ("+abox.getBranch() + ")" );
+			log.fine( "### Worker "+myRank +" : Checking consistency on Branch ("+abox.getBranch() + ")" );
 		
 		initialize (abox);
 		initialize(expr);
