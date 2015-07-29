@@ -106,7 +106,7 @@ public class RBox {
         }
 	}
 
-	private final Map<String, Role> roles = new HashMap<String, Role>();
+	private final Map<ATermAppl, Role> roles = new HashMap<ATermAppl, Role>();
 	private final Set<Role> reflexiveRoles = new HashSet<Role>();
 	
 	private final Map<Role,Map<ATermAppl,Set<Set<ATermAppl>>>> domainAssertions;
@@ -148,7 +148,7 @@ public class RBox {
 	 * @return
 	 */
 	public Role getRole(ATerm r) {
-		return roles.get(r.toString());		//[TODO] NPE is found here.
+		return roles.get(r);		//[TODO] NPE is found here.
 	}
 
 	/**
@@ -159,7 +159,7 @@ public class RBox {
 	 * @return
 	 */
 	public Role getDefinedRole(ATerm r) {
-		Role role = roles.get(r.toString());
+		Role role = roles.get(r);
 
 		if (role == null) {
 			throw new RuntimeException(r + " is not defined as a property");
@@ -173,7 +173,7 @@ public class RBox {
 
 		if (role == null) {
 			role = new Role(r, PropertyType.UNTYPED);
-			roles.put(r.toString(), role);
+			roles.put(r, role);
 		}
 
 		return role;
@@ -243,7 +243,7 @@ public class RBox {
 			default:
 				if (role == null) {
 					role = new Role(r, PropertyType.OBJECT);
-					roles.put(r.toString(), role);
+					roles.put(r, role);
 				}
 				else {
 					role.setType(PropertyType.OBJECT);
@@ -251,7 +251,7 @@ public class RBox {
 
 				ATermAppl invR = ATermUtils.makeInv(r);
 				Role invRole = new Role(invR, PropertyType.OBJECT);
-				roles.put(invR.toString(), invRole);
+				roles.put(invR, invRole);
 
 				role.setInverse(invRole);
 				invRole.setInverse(role);
@@ -272,7 +272,7 @@ public class RBox {
 
 		if (role == null) {
 			role = new Role(r, PropertyType.DATATYPE);
-			roles.put(r.toString(), role);
+			roles.put(r, role);
 
 			addSubRole(ATermUtils.BOTTOM_DATA_PROPERTY, role.getName(), DependencySet.INDEPENDENT);
 			addSubRole(role.getName(), ATermUtils.TOP_DATA_PROPERTY, DependencySet.INDEPENDENT);
@@ -300,7 +300,7 @@ public class RBox {
 
 		if (role == null) {
 			role = new Role(r, PropertyType.ANNOTATION);
-			roles.put(r.toString(), role);
+			roles.put(r, role);
 		}
 		else {
 			switch (role.getType()) {
@@ -520,7 +520,7 @@ public class RBox {
 	 * check if the term is declared as a role
 	 */
 	public boolean isRole(ATerm r) {
-		return roles.containsKey(r.toString());
+		return roles.containsKey(r);
 	}
 
 	public void prepare() {
@@ -932,7 +932,7 @@ public class RBox {
 	/**
 	 * @return Returns the roles.
 	 */
-	public Set<String> getRoleNames() {
+	public Set<ATermAppl> getRoleNames() {
 		return roles.keySet();
 	}
 
