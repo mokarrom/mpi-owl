@@ -34,6 +34,7 @@ public class MPIALCStrategy extends CompletionStrategy {
 	
 	public Expressivity expr;
 	private int myRank = -1;
+	private boolean isConsistent;
 	
 	protected List<ABox> aboxList;
 	protected List<ABox> closedAboxList;
@@ -49,6 +50,7 @@ public class MPIALCStrategy extends CompletionStrategy {
 		
 		myRank = MPI.COMM_WORLD.Rank();
 		int numProcs = MPI.COMM_WORLD.Size();
+		double startTime = MPI.Wtime();
 		
 		//KryoSerializer.register();
 		
@@ -74,6 +76,14 @@ public class MPIALCStrategy extends CompletionStrategy {
 			ABox a = (ABox) KryoSerializer.deserialize(rByteArray, ABox.class);	//Serializer.deserialize(rByteArray);
 			System.out.println("Object received");*/
 		}
+		
+		if (myRank == MASTER) {
+			String str = "...........................................................\n";
+			str += "###   Consistent : " + isConsistent +" || Time : " + (MPI.Wtime() - startTime)+" || Workers : "+ (numProcs-1) +"   ###\n";
+			str += "...........................................................";
+			System.out.println(str);
+		}
+		
 	}
 	
 	public void mpiOwlManager (int numOfWorker) {
@@ -139,10 +149,10 @@ public class MPIALCStrategy extends CompletionStrategy {
 		}
 		
 		if (isCompleted) {
-			System.out.println("### Given ABox is cmplete!");
+			isConsistent = true;
 		}
 		else if (isClosed) {
-			System.out.println("### Given ABox is closed!");
+			isConsistent = false;
 		}
 		else {
 			System.out.println("### Should not print!");
@@ -187,7 +197,7 @@ public class MPIALCStrategy extends CompletionStrategy {
 			}
 			else if (wStatus.tag == WAIT_TAG) {
 				try {
-				    Thread.sleep(1000);                 //1000 milliseconds is one second. Should not be very less or high.
+				    Thread.sleep(500);                 //1000 milliseconds is one second. Should not be very less or high.
 				} catch(InterruptedException ex) {
 				    Thread.currentThread().interrupt();
 				}
