@@ -50,7 +50,7 @@ public class MPIALCStrategy extends CompletionStrategy {
 		myRank = MPI.COMM_WORLD.Rank();
 		int numProcs = MPI.COMM_WORLD.Size();
 		
-		KryoSerializer.register();
+		//KryoSerializer.register();
 		
 		if (myRank == MASTER) {
 			//System.out.println("Maanager");

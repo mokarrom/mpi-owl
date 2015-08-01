@@ -50,6 +50,9 @@ import aterm.ATermList;
  * @author Evren Sirin
  */
 public class DisjunctionRule extends AbstractTableauRule {
+	
+	private static int branchCounter = 1;
+	
 	public DisjunctionRule(CompletionStrategy strategy) {
 		super( strategy, NodeSelector.DISJUNCTION, BlockingType.COMPLETE );
 	}
@@ -120,11 +123,14 @@ public class DisjunctionRule extends AbstractTableauRule {
 	}
 	
 	protected void mpiApplyDisjunctionRule (Individual node, ATermAppl disjunction, ATermAppl[] disj) {	
-		ABox abox = strategy.getABox();
+
 		int j, k, clashFound = 0;
 		int disjLength = disj.length;
 		DependencySet lastClashDepends = null;
 		int myRank = MPI.COMM_WORLD.Rank();
+		
+		ABox abox = strategy.getABox();
+		ABox originalAbox = abox.copy();
 		
 		if( log.isLoggable( Level.FINE ) )  
             log.fine( "Rank # "+myRank+" : ABox branch : (" + abox.getBranch() + ") Node: " + node + " : apply disjunction rule on " + ATermUtils.toString(disjunction) );
@@ -171,7 +177,7 @@ public class DisjunctionRule extends AbstractTableauRule {
 		ATermAppl nodeName = node.getTerm();
 		
 		for ( k = j; k < disjLength; k++ ) {
-			ABox newAbox = abox.copy();
+			ABox newAbox = originalAbox.copy();
 			Node newNode = newAbox.getNode(nodeName);
 			
 			ATermAppl d = disj[k];
@@ -201,7 +207,8 @@ public class DisjunctionRule extends AbstractTableauRule {
 				newAbox = null;
 			}
 			else {	
-				newAbox.incrementBranch();
+				branchCounter++;
+				newAbox.setBranch(branchCounter);
 				if( log.isLoggable( Level.FINE ) ) {
 		            log.fine("Rank # "+myRank+" : New ABox# DISJ: Branch (" + newAbox.getBranch() + ") is sending to the Manager." );
 				}
