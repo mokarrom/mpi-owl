@@ -37,7 +37,6 @@ public class MPIALCStrategy extends CompletionStrategy {
 	private boolean isConsistent;
 	
 	protected List<ABox> aboxList;
-	protected List<ABox> closedAboxList;
 	
 	public MPIALCStrategy(ABox abox, Expressivity expressivity) {
 		super( abox );
@@ -79,7 +78,7 @@ public class MPIALCStrategy extends CompletionStrategy {
 		
 		if (myRank == MASTER) {
 			String str = "...........................................................\n";
-			str += "###   Consistent : " + isConsistent +" || Time : " + (MPI.Wtime() - startTime)+" || Workers : "+ (numProcs-1) +"   ###\n";
+			str += "###   Consistent : " + isConsistent +" || Time : " + (MPI.Wtime() - startTime)+ " seconds  || Workers : "+ (numProcs-1) +"   ###\n";
 			str += "...........................................................";
 			System.out.println(str);
 		}
@@ -87,32 +86,31 @@ public class MPIALCStrategy extends CompletionStrategy {
 	}
 	
 	public void mpiOwlManager (int numOfWorker) {
-		aboxList = new ArrayList<ABox>();
-		closedAboxList = new ArrayList<ABox>();
-		ABox[] D = new ABox[numOfWorker + 1];	//Index 0 will never be used. It is reserved for Master.
+		aboxList = new ArrayList<ABox>(999);
+		
+		int numOfABoxes, numOfClosedABoxes = 0;
 		int[] rBuf = new int[1];
 		int[] sDummyBuf = new int[1];
 		
 		aboxList.add(abox);
+		numOfABoxes = aboxList.size();
 		
 		boolean isClosed = false, isCompleted = false;
 		
 		Status mStatus;
-		int ptr = 0;
 		sDummyBuf[0] = dummy;
 		
 		while (!isCompleted && !isClosed) {
 			mStatus = MPI.COMM_WORLD.Recv(rBuf, 0, 1, MPI.INT, MPI.ANY_SOURCE, MPI.ANY_TAG);
 			if (mStatus.tag == WORK_REQ_TAG) {
-				if (ptr < aboxList.size()) {
-					ABox sABox = aboxList.get(ptr);
+				if (aboxList.size() > 0) {
+					ABox sABox = aboxList.get(0);
 					int size[] = new int[1];
 					byte sByteArray[] = KryoSerializer.serialize (sABox);
 					size[0] = sByteArray.length;
 					MPI.COMM_WORLD.Send(size, 0, 1, MPI.INT, mStatus.source, CHECK_TAG);
 					MPI.COMM_WORLD.Send(sByteArray, 0, size[0], MPI.BYTE, mStatus.source, ABOX);
-					D[mStatus.source] = sABox;
-					ptr++;
+					aboxList.remove(0);
 				}
 				else {
 					MPI.COMM_WORLD.Send(sDummyBuf, 0, 1, MPI.INT, mStatus.source, WAIT_TAG);
@@ -123,14 +121,10 @@ public class MPIALCStrategy extends CompletionStrategy {
 				MPI.COMM_WORLD.Recv(byteArray, 0, rBuf[0], MPI.BYTE, mStatus.source, NEW_ABOX);
 				ABox mABox = (ABox) KryoSerializer.deserialize (byteArray, ABox.class);
 				aboxList.add(mABox);	
+				numOfABoxes++;
 			}
 			else if (mStatus.tag == CLASH_TAG) {
-				if (D[mStatus.source] != null) {
-					closedAboxList.add(D[mStatus.source]);
-					D[mStatus.source] = null;
-				}		
-				else
-					System.out.println("Error: CLASH_TAG");
+				numOfClosedABoxes++;
 			}
 			else if (mStatus.tag == COMPLETE_TAG) {
 				isCompleted = true;
@@ -138,8 +132,8 @@ public class MPIALCStrategy extends CompletionStrategy {
 			else {
 				System.out.println("Error: Invalid TAG");
 			}
-			
-			if (aboxList.size() == closedAboxList.size())
+		
+			if (numOfABoxes == numOfClosedABoxes)
 				isClosed = true;
  		}
 		

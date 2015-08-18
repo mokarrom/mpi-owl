@@ -174,8 +174,7 @@ public final class KryoSerializer {
    
    public static Object deserialize(final byte[] bytes, final Class<?> clazz) {
 	  
-	   ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-	   Input input = new Input(bis);
+	   Input input = new Input(bytes);
 	   input.close();
 
 	   return kryo.readObject(input, clazz);
@@ -187,7 +186,7 @@ public final class KryoSerializer {
 	   for (byte b : bytes) {
 	       sb.append(String.format("%02X ", b));
 	   }
-	   System.out.println("Byet in Hex : "+sb.toString());
+	   System.out.println("Byte in Hex : "+sb.toString());
    }
    
 }
