@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.logging.Level;
 
 import mpi.MPI;
+import mpi.Status;
 
 import org.mindswap.pellet.ABox;
 import org.mindswap.pellet.Clash;
@@ -26,6 +27,7 @@ import org.mindswap.pellet.kryoserializer.KryoSerializer;
 import org.mindswap.pellet.Node;
 import org.mindswap.pellet.PelletOptions;
 import org.mindswap.pellet.exceptions.InternalReasonerException;
+import org.mindswap.pellet.tableau.branch.DisjunctionBranch;
 import org.mindswap.pellet.tableau.completion.CompletionStrategy;
 import org.mindswap.pellet.tableau.completion.queue.NodeSelector;
 import org.mindswap.pellet.utils.ATermUtils;
@@ -50,8 +52,6 @@ import aterm.ATermList;
  * @author Evren Sirin
  */
 public class DisjunctionRule extends AbstractTableauRule {
-	
-	private static int branchCounter = 1;
 	
 	public DisjunctionRule(CompletionStrategy strategy) {
 		super( strategy, NodeSelector.DISJUNCTION, BlockingType.COMPLETE );
@@ -112,14 +112,28 @@ public class DisjunctionRule extends AbstractTableauRule {
 			if( node.hasType( disj[index] ) )
 				return;
 		}
-		
-		mpiApplyDisjunctionRule (node, disjunction, disj);
 
-//		DisjunctionBranch newBranch = new DisjunctionBranch( strategy.getABox(), strategy, node,
-//				disjunction, node.getDepends( disjunction ), disj );
-//		strategy.addBranch( newBranch );
-//
-//		newBranch.tryNext();
+		//MASTER = 0;	AVAILABLE_WORKER_TAG = 301;	dummy = 111;
+		int[] srDummyBuf = new int[1];
+		srDummyBuf[0] = 111;	
+		MPI.COMM_WORLD.Send(srDummyBuf, 0, 1, MPI.INT, 0, 301);
+		Status wStatus = MPI.COMM_WORLD.Recv(srDummyBuf, 0, 1, MPI.INT, 0, MPI.ANY_TAG);
+		
+		if (wStatus.tag == 103) {
+			MPI.Finalize();
+			System.exit(0);
+		}
+
+		if (srDummyBuf[0] > 0) {	// If there are free workers.
+			mpiApplyDisjunctionRule (node, disjunction, disj);
+		}
+		else {	//No free worker!
+			DisjunctionBranch newBranch = new DisjunctionBranch( strategy.getABox(), strategy, node,
+					disjunction, node.getDepends( disjunction ), disj );
+			strategy.addBranch( newBranch );
+
+			newBranch.tryNext();
+		}
 	}
 	
 	protected void mpiApplyDisjunctionRule (Individual node, ATermAppl disjunction, ATermAppl[] disj) {	
@@ -207,8 +221,6 @@ public class DisjunctionRule extends AbstractTableauRule {
 				newAbox = null;
 			}
 			else {	
-				branchCounter++;
-				newAbox.setBranch(branchCounter);
 				if( log.isLoggable( Level.FINE ) ) {
 		            log.fine("Rank # "+myRank+" : New ABox# DISJ: Branch (" + newAbox.getBranch() + ") is sending to the Manager." );
 				}

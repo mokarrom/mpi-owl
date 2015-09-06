@@ -3,6 +3,8 @@ package org.mindswap.pellet.tableau.completion;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -10,6 +12,7 @@ import mpi.*;
 
 import org.mindswap.pellet.ABox;
 import org.mindswap.pellet.IndividualIterator;
+import org.mindswap.pellet.exceptions.InternalReasonerException;
 import org.mindswap.pellet.kryoserializer.KryoSerializer;
 import org.mindswap.pellet.NodeMerge;
 import org.mindswap.pellet.PelletOptions;
@@ -20,17 +23,18 @@ import com.clarkparsia.pellet.expressivity.Expressivity;
 
 public class MPIALCStrategy extends CompletionStrategy {
 	
-	static final int dummy 			= 111;
-	static final int MASTER 		= 0;
-	static final int CHECK_TAG 		= 101;
-	static final int WAIT_TAG 		= 102;
-	static final int STOP_TAG 		= 103;
-	static final int ABOX 			= 104;
-	static final int WORK_REQ_TAG 	= 201;
-	static final int CLASH_TAG 		= 202;
-	static final int COMPLETE_TAG 	= 203;
-	static final int NEW_ABOX_TAG 	= 204;
-	static final int NEW_ABOX 		= 205;
+	static final int dummy 					= 111;
+	static final int MASTER 				= 0;
+	static final int CHECK_TAG 				= 101;
+	static final int WAIT_TAG 				= 102;
+	static final int STOP_TAG 				= 103;
+	static final int ABOX 					= 104;
+	static final int WORK_REQ_TAG 			= 201;
+	static final int CLASH_TAG 				= 202;
+	static final int COMPLETE_TAG 			= 203;
+	static final int NEW_ABOX_TAG 			= 204;
+	static final int NEW_ABOX 				= 205;
+	static final int AVAILABLE_WORKER_TAG 	= 301;
 	
 	public Expressivity expr;
 	private int myRank = -1;
@@ -77,20 +81,25 @@ public class MPIALCStrategy extends CompletionStrategy {
 		}
 		
 		if (myRank == MASTER) {
-			String str = "...........................................................\n";
+			String str = "\n...................................................................\n";
 			str += "###   Consistent : " + isConsistent +" || Time : " + (MPI.Wtime() - startTime)+ " seconds  || Workers : "+ (numProcs-1) +"   ###\n";
-			str += "...........................................................";
+			str += "...................................................................";
 			System.out.println(str);
+			if( log.isLoggable( Level.FINE ) ) 
+				log.fine( str );
 		}
 		
 	}
 	
-	public void mpiOwlManager (int numOfWorker) {
+	public void mpiOwlManager (int numOfWorkers) {
 		aboxList = new ArrayList<ABox>(999);
 		
 		int numOfABoxes, numOfClosedABoxes = 0;
 		int[] rBuf = new int[1];
 		int[] sDummyBuf = new int[1];
+		
+		boolean[] workers = new boolean [numOfWorkers + 1]; //Index 0 will never be used. It is reserved for Master.
+		Arrays.fill(workers, true);	//Initially all workers are available.
 		
 		aboxList.add(abox);
 		numOfABoxes = aboxList.size();
@@ -111,10 +120,22 @@ public class MPIALCStrategy extends CompletionStrategy {
 					MPI.COMM_WORLD.Send(size, 0, 1, MPI.INT, mStatus.source, CHECK_TAG);
 					MPI.COMM_WORLD.Send(sByteArray, 0, size[0], MPI.BYTE, mStatus.source, ABOX);
 					aboxList.remove(0);
+					workers[mStatus.source] = false;
 				}
 				else {
 					MPI.COMM_WORLD.Send(sDummyBuf, 0, 1, MPI.INT, mStatus.source, WAIT_TAG);
+					workers[mStatus.source] = true;
 				}
+			}
+			else if (mStatus.tag == AVAILABLE_WORKER_TAG) {		
+				int availableWorkers = 0;
+				for (int n = 1; n <= numOfWorkers; n++) {	//Index 0 is reserved for Master. So indices 1 to numOfWorker are valid.
+					if (workers[n] == true)
+						availableWorkers++;
+				}
+				int[] tempBuf = new int[1];
+				tempBuf[0] = availableWorkers;
+				MPI.COMM_WORLD.Send(tempBuf, 0, 1, MPI.INT, mStatus.source, AVAILABLE_WORKER_TAG);
 			}
 			else if (mStatus.tag == NEW_ABOX_TAG) {
 				byte byteArray[] = new byte[rBuf[0]];
@@ -137,7 +158,7 @@ public class MPIALCStrategy extends CompletionStrategy {
 				isClosed = true;
  		}
 		
-		for (int j = 0; j < numOfWorker; j++) {
+		for (int j = 0; j < numOfWorkers; j++) {
 			mStatus = MPI.COMM_WORLD.Recv(sDummyBuf, 0, 1, MPI.INT, MPI.ANY_SOURCE, MPI.ANY_TAG);
 			MPI.COMM_WORLD.Send(sDummyBuf, 0, 1, MPI.INT, mStatus.source, STOP_TAG);
 		}
@@ -191,7 +212,7 @@ public class MPIALCStrategy extends CompletionStrategy {
 			}
 			else if (wStatus.tag == WAIT_TAG) {
 				try {
-				    Thread.sleep(500);                 //1000 milliseconds is one second. Should not be very less or high.
+				    Thread.sleep(100);                 //1000 milliseconds is one second. Should not be very less or high.
 				} catch(InterruptedException ex) {
 				    Thread.currentThread().interrupt();
 				}
@@ -217,38 +238,131 @@ public class MPIALCStrategy extends CompletionStrategy {
 		initialize (abox);
 		initialize(expr);
 		
-		while( abox.isChanged() && !abox.isClosed() ) {
+		while ( !abox.isComplete() ) {
+			while( abox.isChanged() && !abox.isClosed() ) {
+				completionTimer.check();
+	
+				abox.setChanged( false );
+	
+				if( log.isLoggable( Level.FINE ) ) {
+					log.fine( "Branch: " + abox.getBranch() + ", Depth: " + abox.stats.treeDepth
+							+ ", Size: " + abox.getNodes().size() + ", Mem: "
+							+ (Runtime.getRuntime().freeMemory() / 1000) + "kb" );
+					abox.validate();
+					printBlocked();
+					abox.printTree();
+				}
+	
+				IndividualIterator i = abox.getIndIterator();
+	
+				for( TableauRule tableauRule : tableauRules ) {
+					tableauRule.apply( i );
+					if( abox.isClosed() )
+						break;
+				}
+			}
+			if( abox.isClosed() ) {
+				if( log.isLoggable( Level.FINE ) )
+					log.fine( "Clash at Branch (" + abox.getBranch() + ") " + abox.getClash() );
+
+				if( backtrack() ) {
+					abox.setClash( null );
+				}
+				else {
+					abox.setComplete( true );
+				}
+			}
+			else {
+				abox.setComplete( true );
+			}
+		}
+
+		return !abox.isClosed();
+	}
+	
+	protected boolean backtrack() {
+		boolean branchFound = false;
+		abox.stats.backtracks++;
+		while( !branchFound ) {
 			completionTimer.check();
 
-			abox.setChanged( false );
+			int lastBranch = abox.getClash().getDepends().max();
 
-			if( log.isLoggable( Level.FINE ) ) {
-				log.fine( "Branch: " + abox.getBranch() + ", Depth: " + abox.stats.treeDepth
-						+ ", Size: " + abox.getNodes().size() + ", Mem: "
-						+ (Runtime.getRuntime().freeMemory() / 1000) + "kb" );
-				abox.validate();
-				printBlocked();
-				abox.printTree();
+			// not more branches to try
+			if( lastBranch <= 0 )
+				return false;
+			else if( lastBranch > abox.getBranches().size() )
+				throw new InternalReasonerException( "Backtrack: Trying to backtrack to branch "
+						+ lastBranch + " but has only " + abox.getBranches().size()
+						+ " branches. Clash found: " + abox.getClash() );
+			else if( PelletOptions.USE_INCREMENTAL_DELETION ) {
+				// get the last branch
+				Branch br = abox.getBranches().get( lastBranch - 1 );
+
+				// if this is the last disjunction, merge pair, etc. for the
+				// branch (i.e, br.tryNext == br.tryCount-1) and there are no
+				// other branches to test (ie.
+				// abox.getClash().depends.size()==2),
+				// then update depedency index and return false
+				if( (br.getTryNext() == br.getTryCount() - 1)
+						&& abox.getClash().getDepends().size() == 2 ) {
+					abox.getKB().getDependencyIndex().addCloseBranchDependency( br,
+							abox.getClash().getDepends() );
+					return false;
+				}
 			}
 
-			IndividualIterator i = abox.getIndIterator();
-
-			for( TableauRule tableauRule : tableauRules ) {
-				tableauRule.apply( i );
-				if( abox.isClosed() )
-					break;
+			List<Branch> branches = abox.getBranches();
+			abox.stats.backjumps += (branches.size() - lastBranch);
+			// CHW - added for incremental deletion support
+			if( PelletOptions.USE_TRACING && PelletOptions.USE_INCREMENTAL_CONSISTENCY ) {
+				// we must clean up the KB dependecny index
+				List<Branch> brList = branches.subList( lastBranch, branches.size() );
+				for( Iterator<Branch> it = brList.iterator(); it.hasNext(); ) {
+					// remove from the dependency index
+					abox.getKB().getDependencyIndex().removeBranchDependencies( it.next() );
+				}
+				brList.clear();
 			}
-		}
+			else {
+				// old approach
+				branches.subList( lastBranch, branches.size() ).clear();
+			}
 
-		if( abox.isClosed() ) {
+			// get the branch to try
+			Branch newBranch = branches.get( lastBranch - 1 );
+
 			if( log.isLoggable( Level.FINE ) )
-				log.fine( "Clash at Branch (" + abox.getBranch() + ") " + abox.getClash() );
-			return false;
+				log.fine( "JUMP: Branch " + lastBranch );
+
+			if( lastBranch != newBranch.getBranch() )
+				throw new InternalReasonerException( "Backtrack: Trying to backtrack to branch "
+						+ lastBranch + " but got " + newBranch.getBranch() );
+
+			// set the last clash before restore
+			if( newBranch.getTryNext() < newBranch.getTryCount() ) {
+				newBranch.setLastClash( abox.getClash().getDepends() );
+			}
+
+			// increment the counter
+			newBranch.setTryNext( newBranch.getTryNext() + 1 );
+
+			// no need to restore this branch if we exhausted possibilities
+			if( newBranch.getTryNext() < newBranch.getTryCount() ) {
+				// undo the changes done after this branch
+				restore( newBranch );
+			}
+
+			// try the next possibility
+			branchFound = newBranch.tryNext();
+
+			if( !branchFound ) {
+				if( log.isLoggable( Level.FINE ) )
+					log.fine( "FAIL: Branch " + lastBranch );
+			}
 		}
-		else {
-			abox.setComplete( true );
-			return true;
-		}
+
+		return branchFound;
 	}
 
 }

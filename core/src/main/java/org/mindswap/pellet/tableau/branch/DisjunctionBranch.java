@@ -36,6 +36,8 @@ import java.util.logging.Level;
 import java.util.HashSet;
 import java.util.Set;
 
+import mpi.MPI;
+
 import org.mindswap.pellet.ABox;
 import org.mindswap.pellet.Clash;
 import org.mindswap.pellet.DependencySet;
@@ -50,6 +52,8 @@ import aterm.ATermAppl;
 
 
 public class DisjunctionBranch extends Branch {
+	private int myRank;
+	
 	protected Node node;
 	protected ATermAppl disjunction;
 	private ATermAppl[] disj;
@@ -66,6 +70,8 @@ public class DisjunctionBranch extends Branch {
 		this.order = new int[disj.length];
         for(int i = 0; i < disj.length; i++)
             order[i] = i;
+        
+        myRank = MPI.COMM_WORLD.Rank(); 
 	}
 	
 	public Node getNode() {
@@ -73,7 +79,7 @@ public class DisjunctionBranch extends Branch {
 	}
     
     protected String getDebugMsg() {
-        return "DISJ: Branch (" + getBranch() + ") try (" + (getTryNext() + 1) + "/" + getTryCount()
+        return "Rank # "+myRank+" : DISJ: Branch (" + getBranch() + ") try (" + (getTryNext() + 1) + "/" + getTryCount()
             + ") " + node + " " +  ATermUtils.toString( disj[getTryNext()] ) + " " + ATermUtils.toString(disjunction);
     }
 	
@@ -222,7 +228,7 @@ public class DisjunctionBranch extends Branch {
 			if(clashDepends != null) {				
 				if( log.isLoggable( Level.FINE ) ) {
 					Clash clash = abox.isClosed() ? abox.getClash() : Clash.atomic(node, clashDepends, d);
-                    log.fine("CLASH: Branch " + getBranch() + " " + clash + "!" + " " + clashDepends.getExplain());
+                    log.fine("Rank # "+myRank+" : CLASH: Branch " + getBranch() + " " + clash + "!" + " " + clashDepends.getExplain());
 				}
 				
 				if( PelletOptions.USE_DISJUNCT_SORTING ) {
