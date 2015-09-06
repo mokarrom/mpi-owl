@@ -56,9 +56,11 @@ public final class KryoSerializer {
 		   kryo.register(int[].class);
 		   kryo.register(aterm.ATerm[].class);
 		   kryo.register(aterm.pure.AFunImpl.class);
+		   kryo.register(aterm.ATermAppl[].class);
 		   
 		   kryo.register(org.mindswap.pellet.Individual.class);
 		   kryo.register(org.mindswap.pellet.DependencySet.class);
+		   kryo.register(org.mindswap.pellet.DependencySet[].class);
 		   kryo.register(org.mindswap.pellet.utils.intset.ArrayIntSet.class);
 		   kryo.register(Class.forName("org.mindswap.pellet.utils.SetUtils$EmptySet"));
 			
@@ -137,8 +139,15 @@ public final class KryoSerializer {
 		   //new classes
 		   kryo.register(org.mindswap.pellet.DefaultEdge.class);
 		   kryo.register(org.mindswap.pellet.Literal.class);
+		   kryo.register(org.mindswap.pellet.Clash.class);
+		   kryo.register(org.mindswap.pellet.utils.fsm.TransitionGraph.class);
+		   kryo.register(org.mindswap.pellet.utils.fsm.State.class);
+		   kryo.register(org.mindswap.pellet.utils.fsm.Transition.class);
+		   kryo.register(org.mindswap.pellet.tableau.completion.rule.AllValuesRule.class);
+		   kryo.register(Class.forName("org.mindswap.pellet.Clash$ClashType"));
 		   kryo.register(org.mindswap.pellet.tableau.blocking.OptimizedDoubleBlocking.class);
 		   kryo.register(org.mindswap.pellet.tableau.blocking.EqualityBlocking.class);
+		   kryo.register(org.mindswap.pellet.tableau.branch.DisjunctionBranch.class);
 		   kryo.register(org.mindswap.pellet.NodeMerge.class);
 		   kryo.register(Class.forName("java.lang.ref.Finalizer"));
 		   kryo.register(Class.forName("java.util.WeakHashMap$Entry"));
