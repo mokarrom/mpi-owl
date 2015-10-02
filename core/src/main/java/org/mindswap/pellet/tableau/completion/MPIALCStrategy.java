@@ -80,9 +80,11 @@ public class MPIALCStrategy extends CompletionStrategy {
 			System.out.println("Object received");*/
 		}
 		
+		double elapsedTime  = MPI.Wtime() - startTime;
+		
 		if (myRank == MASTER) {
 			String str = "\n...................................................................\n";
-			str += "###   Consistent : " + isConsistent +" || Time : " + (MPI.Wtime() - startTime)+ " seconds  || Workers : "+ (numProcs-1) +"   ###\n";
+			str += "###   Consistent : " + isConsistent +" || Time : " + elapsedTime + " seconds  || Workers : "+ (numProcs-1) +"   ###\n";
 			str += "...................................................................";
 			System.out.println(str);
 			if( log.isLoggable( Level.FINE ) ) 

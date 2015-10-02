@@ -70,6 +70,9 @@ public class DisjunctionRule extends AbstractTableauRule {
 			sortDisjunctions( node, disjunctions );
 
 		for( int j = 0, n = disjunctions.length; j < n; j++ ) {
+			
+			node.applyNext[Node.OR] = node.applyNext[Node.OR] + 1;
+			
 			ATermAppl disjunction = disjunctions[j];
 
 			applyDisjunctionRule( node, disjunction );
@@ -77,7 +80,7 @@ public class DisjunctionRule extends AbstractTableauRule {
 			if( strategy.getABox().isClosed() || node.isMerged() )
 				return;
 		}
-		node.applyNext[Node.OR] = size;
+		//node.applyNext[Node.OR] = size;
 	}
 
 	private static void sortDisjunctions(final Individual node, ATermAppl[] disjunctions) {
