@@ -122,7 +122,14 @@ public class DisjunctionRule extends AbstractTableauRule {
 		MPI.COMM_WORLD.Send(srDummyBuf, 0, 1, MPI.INT, 0, 301);
 		Status wStatus = MPI.COMM_WORLD.Recv(srDummyBuf, 0, 1, MPI.INT, 0, MPI.ANY_TAG);
 		
-		if (wStatus.tag == 103) {
+		if (wStatus.tag == 105) {	
+			strategy.getABox().closed = true;
+			if( log.isLoggable( Level.FINE ) )  {
+				log.fine("Rank # "+ MPI.COMM_WORLD.Rank() +" : stopped processing current ABox and waiting for new one");
+			}
+			return;
+		}
+		else if (wStatus.tag == 103) {
 			MPI.Finalize();
 			System.exit(0);
 		}

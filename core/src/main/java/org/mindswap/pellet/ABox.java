@@ -98,7 +98,8 @@ import com.clarkparsia.pellet.utils.MultiMapUtils;
 public class ABox {
 	public final static Logger				log					= Logger.getLogger( ABox.class.getName() );
 
-
+	private int parentRank = -1;
+	public boolean closed = false;
 	// following two variables are used to generate names
 	// for newly generated individuals. so during rules are
 	// applied anon1, anon2, etc. will be generated. This prefix
@@ -456,6 +457,14 @@ public class ABox {
 		sourceABox = null;
 	}
 
+	public void setParentRank(int parent) {
+		parentRank = parent;
+	}
+	
+	public int getParentRank() {
+		return parentRank;
+	}
+	
 	/**
 	 * Clear the pseudo model created for the ABox and concept satisfiability.
 	 * 
@@ -2009,7 +2018,7 @@ public class ABox {
 	 * @return
 	 */
 	public boolean isClosed() {
-		return !PelletOptions.SATURATE_TABLEAU && initialized && clash != null;
+		return closed || (!PelletOptions.SATURATE_TABLEAU && initialized && clash != null);
 	}
 
 	public Clash getClash() {

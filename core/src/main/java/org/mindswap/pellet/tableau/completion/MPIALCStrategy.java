@@ -29,12 +29,15 @@ public class MPIALCStrategy extends CompletionStrategy {
 	static final int WAIT_TAG 				= 102;
 	static final int STOP_TAG 				= 103;
 	static final int ABOX 					= 104;
+	static final int CLOSED_TAG 			= 105;
 	static final int WORK_REQ_TAG 			= 201;
 	static final int CLASH_TAG 				= 202;
 	static final int COMPLETE_TAG 			= 203;
 	static final int NEW_ABOX_TAG 			= 204;
 	static final int NEW_ABOX 				= 205;
 	static final int AVAILABLE_WORKER_TAG 	= 301;
+	
+	static final int DEAD 					= -5;
 	
 	public Expressivity expr;
 	private int myRank = -1;
@@ -103,6 +106,9 @@ public class MPIALCStrategy extends CompletionStrategy {
 		boolean[] workers = new boolean [numOfWorkers + 1]; //Index 0 will never be used. It is reserved for Master.
 		Arrays.fill(workers, true);	//Initially all workers are available.
 		
+		int[] parent = new int[numOfWorkers + 1];
+		Arrays.fill(parent, -1); 
+		
 		aboxList.add(abox);
 		numOfABoxes = aboxList.size();
 		
@@ -116,6 +122,7 @@ public class MPIALCStrategy extends CompletionStrategy {
 			if (mStatus.tag == WORK_REQ_TAG) {
 				if (aboxList.size() > 0) {
 					ABox sABox = aboxList.get(0);
+					parent[mStatus.source] = sABox.getParentRank();
 					int size[] = new int[1];
 					byte sByteArray[] = KryoSerializer.serialize (sABox);
 					size[0] = sByteArray.length;
@@ -130,24 +137,35 @@ public class MPIALCStrategy extends CompletionStrategy {
 				}
 			}
 			else if (mStatus.tag == AVAILABLE_WORKER_TAG) {		
-				int availableWorkers = 0;
-				for (int n = 1; n <= numOfWorkers; n++) {	//Index 0 is reserved for Master. So indices 1 to numOfWorker are valid.
-					if (workers[n] == true)
-						availableWorkers++;
-				}
 				int[] tempBuf = new int[1];
-				tempBuf[0] = availableWorkers;
-				MPI.COMM_WORLD.Send(tempBuf, 0, 1, MPI.INT, mStatus.source, AVAILABLE_WORKER_TAG);
+				if (parent[mStatus.source] == DEAD) { //The parent of current abox is already closed.
+					tempBuf[0] = dummy;
+					MPI.COMM_WORLD.Send(tempBuf, 0, 1, MPI.INT, mStatus.source, CLOSED_TAG);
+				}
+				else {
+					int availableWorkers = 0;
+					for (int n = 1; n <= numOfWorkers; n++) {	//Index 0 is reserved for Master. So indices 1 to numOfWorker are valid.
+						if (workers[n] == true)
+							availableWorkers++;
+					}
+					tempBuf[0] = availableWorkers;
+					MPI.COMM_WORLD.Send(tempBuf, 0, 1, MPI.INT, mStatus.source, AVAILABLE_WORKER_TAG);
+				}	
 			}
 			else if (mStatus.tag == NEW_ABOX_TAG) {
 				byte byteArray[] = new byte[rBuf[0]];
 				MPI.COMM_WORLD.Recv(byteArray, 0, rBuf[0], MPI.BYTE, mStatus.source, NEW_ABOX);
 				ABox mABox = (ABox) KryoSerializer.deserialize (byteArray, ABox.class);
+				mABox.setParentRank(mStatus.source);
 				aboxList.add(mABox);	
 				numOfABoxes++;
 			}
 			else if (mStatus.tag == CLASH_TAG) {
 				numOfClosedABoxes++;
+				for (int n = 1; n <= numOfWorkers; n++) {	//Index 0 is reserved for Master. So indices 1 to numOfWorker are valid.
+					if (parent[n] == mStatus.source)
+						parent[n] = DEAD;
+				}
 			}
 			else if (mStatus.tag == COMPLETE_TAG) {
 				isCompleted = true;
@@ -263,7 +281,7 @@ public class MPIALCStrategy extends CompletionStrategy {
 						break;
 				}
 			}
-			if( abox.isClosed() ) {
+			if( abox.isClosed() && !abox.closed ) {
 				if( log.isLoggable( Level.FINE ) )
 					log.fine( "Clash at Branch (" + abox.getBranch() + ") " + abox.getClash() );
 
