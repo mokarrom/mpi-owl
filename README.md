@@ -1,4 +1,4 @@
-MPI-OWL: An NPI-backed parallel DL reasoner for Java
+MPI-OWL: An MPI-backed parallel DL reasoner for Java
 ----------------------------------------------------
 
 MPI-OWL is an MPI-backed prototype reasoner for tableau-based description logic reasoning in a distribute memory environment. It is developed based on Pellet by means of MPI as a distributed memory program using [MPJ Express](http://mpj-express.org/) library, an open source Java message passing library.
@@ -7,7 +7,8 @@ MPI-OWL is an MPI-backed prototype reasoner for tableau-based description logic 
 * pure Java
 * developed on top of [Pellet](https://github.com/Complexible/pellet). 
 
-Technical Challenge:
+The core framework of MPI-OWL was developed based on one of the most universal manager-worker or tasks parallelism approaches. MPI-OWL allows to execute the consistency checking of a knowledge base in distributed compute architectures (e.g., compute clusters). As far as we are aware, this is the first attempt to parallelize consistency checking in a distributed memory environment using MPI. This work is also significant to the HPC community in the point of view that it attempts to close the gap between Java and MPI.
+
 There are many technical challenges in implementing this dynamic manager-worker algorithm in Java by means MPI. One of the major challenges is passing an object (e.g., an ABox) from one process to another. As the object is not a primitive data type, to pass an object using MPI, all classes of that object must implement the Serializable interface. Since we are working on legacy code, it is not feasible for every class to implement the Serializable interface. Moreover, standard Java serialization is inefficient both in terms of speed and size. To deal with these problems, we converted an object to byte vectors using [Kryo](https://github.com/EsotericSoftware/kryo), a fast and efficient serialization framework for Java, and sent these byte vectors using the same method as primitive byte buffers. At the receiving end, the object is reconstructed using these byte buffers.
 
 ```java
@@ -49,6 +50,15 @@ public static Object recvObject (int recvFrom) {
    
    return obj;
 }
-``
+```
 
-This project is tested on [ACENET](http://www.ace-net.ca/) cluster.
+MPI-OWL is tested on [ACENET](http://www.ace-net.ca/) cluster both in shared memory (using multi-core configuration of MPJ Express) and distributed memory (using cluster-configuration of MPJ Express) environments.
+
+Publication
+-----------
+There is a paper containing the technical details of this project.
+•	**M. Hossain** and W. MacCaull, “Exploration of MPI-backed Parallelization for Tableau-based Description Logic Reasoning”, The 22nd International Conference on Parallel and Distributed    Processing Techniques and Applications (PDPTA'16), accepted, Las Vegas, Nevada, USA, 2016.
+
+Acknowledgement
+---------------
+Natural Sciences and Engineering Research Council of Canada (NSERC).
