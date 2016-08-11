@@ -57,7 +57,8 @@ MPI-OWL is tested on [ACENET](http://www.ace-net.ca/) cluster both in shared mem
 Publication
 -----------
 There is a paper containing the technical details of this project.
-•	**M. Hossain** and W. MacCaull, “Exploration of MPI-backed Parallelization for Tableau-based Description Logic Reasoning”, The 22nd International Conference on Parallel and Distributed    Processing Techniques and Applications (PDPTA'16), accepted, Las Vegas, Nevada, USA, 2016.
+
+	**M. Hossain** and W. MacCaull, “Exploration of MPI-backed Parallelization for Tableau-based Description Logic Reasoning”, The 22nd International Conference on Parallel and Distributed    Processing Techniques and Applications (PDPTA'16), accepted, Las Vegas, Nevada, USA, 2016.
 
 Acknowledgement
 ---------------
