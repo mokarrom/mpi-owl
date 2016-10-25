@@ -1,3 +1,10 @@
+/* File	    : MPIALCStrategy.java
+* -------------------------------------------------
+* Author    : Mokarrom Hossain
+* Purpose   : Parallel completion strategy for the DL ALC
+* License   : See the license agreement of parent projects (i.e., pellet)
+*/
+
 package org.mindswap.pellet.tableau.completion;
 
 import java.io.IOException;
@@ -21,21 +28,28 @@ import org.mindswap.pellet.tableau.completion.rule.TableauRule;
 
 import com.clarkparsia.pellet.expressivity.Expressivity;
 
+/**
+ * A completion strategy specifies how the tableau rules will be applied to an ABox. This class implements 
+ * a manager-worker parallel model for the distribution of the completion strategy.
+ * @author Mokarrom Hossain
+ */
 public class MPIALCStrategy extends CompletionStrategy {
 	
 	static final int dummy 					= 111;
-	static final int MASTER 				= 0;
+	/* A process with rank 0 is the master, and all other processors are the workers. */
+	static final int MASTER 				= 0;	
+	/* These tags will be used to detect the message type. */
 	static final int CHECK_TAG 				= 101;
 	static final int WAIT_TAG 				= 102;
 	static final int STOP_TAG 				= 103;
 	static final int ABOX 					= 104;
-	static final int CLOSED_TAG 			= 105;
-	static final int WORK_REQ_TAG 			= 201;
+	static final int CLOSED_TAG 				= 105;
+	static final int WORK_REQ_TAG 				= 201;
 	static final int CLASH_TAG 				= 202;
-	static final int COMPLETE_TAG 			= 203;
-	static final int NEW_ABOX_TAG 			= 204;
+	static final int COMPLETE_TAG 				= 203;
+	static final int NEW_ABOX_TAG 				= 204;
 	static final int NEW_ABOX 				= 205;
-	static final int AVAILABLE_WORKER_TAG 	= 301;
+	static final int AVAILABLE_WORKER_TAG 			= 301;
 	
 	static final int DEAD 					= -5;
 	
@@ -43,25 +57,24 @@ public class MPIALCStrategy extends CompletionStrategy {
 	private int myRank = -1;
 	private boolean isConsistent;
 	
-	protected List<ABox> aboxList;
+	protected List<ABox> aboxList;	// store the unchecked ABoxes.
 	
 	public MPIALCStrategy(ABox abox, Expressivity expressivity) {
 		super( abox );
 		this.expr = expressivity;
 	}
 	
+	/* This method will be executed by all processes. */
 	public void complete(Expressivity expr) {
-		//System.out.println("My rank = "+MPI.COMM_WORLD.Rank());  return;
 		//initialize( expr );
 		
-		myRank = MPI.COMM_WORLD.Rank();
-		int numProcs = MPI.COMM_WORLD.Size();
+		myRank = MPI.COMM_WORLD.Rank();	// Get the rank of current process.
+		int numProcs = MPI.COMM_WORLD.Size();	// Get the number of processes in the communication.
 		double startTime = MPI.Wtime();
 		
-		//KryoSerializer.register();
+		//KryoSerializer.register();	// register all classes for serialization.
 		
 		if (myRank == MASTER) {
-			//System.out.println("Maanager");
 			//initialize( expr );
 			mpiOwlManager (numProcs - 1);
 
@@ -72,7 +85,6 @@ public class MPIALCStrategy extends CompletionStrategy {
 			MPI.COMM_WORLD.Send(sByteArray, 0, size[0], MPI.BYTE, 1, ABOX);*/
 		}
 		else {
-			//System.out.println("Worker");
 			mpiOwlWorker();
 			
 			/*int count[] = new int[1];		
@@ -118,7 +130,9 @@ public class MPIALCStrategy extends CompletionStrategy {
 		sDummyBuf[0] = dummy;
 		
 		while (!isCompleted && !isClosed) {
+			
 			mStatus = MPI.COMM_WORLD.Recv(rBuf, 0, 1, MPI.INT, MPI.ANY_SOURCE, MPI.ANY_TAG);
+			
 			if (mStatus.tag == WORK_REQ_TAG) {
 				if (aboxList.size() > 0) {
 					ABox sABox = aboxList.get(0);
@@ -178,6 +192,7 @@ public class MPIALCStrategy extends CompletionStrategy {
 				isClosed = true;
  		}
 		
+		// Work has finished. Send a message to every worker to stop. 
 		for (int j = 0; j < numOfWorkers; j++) {
 			mStatus = MPI.COMM_WORLD.Recv(sDummyBuf, 0, 1, MPI.INT, MPI.ANY_SOURCE, MPI.ANY_TAG);
 			MPI.COMM_WORLD.Send(sDummyBuf, 0, 1, MPI.INT, mStatus.source, STOP_TAG);
@@ -212,7 +227,7 @@ public class MPIALCStrategy extends CompletionStrategy {
 				
 				MPI.COMM_WORLD.Recv(byteArray, 0, rBuf[0], MPI.BYTE, MASTER, ABOX);
 				
-				ABox wABox = (ABox) KryoSerializer.deserialize (byteArray, ABox.class);
+				ABox wABox = (ABox) KryoSerializer.deserialize (byteArray, ABox.class);	// reconstruct the ABox
 
 				boolean isConsistent;
 				if (wABox != null) {
@@ -251,6 +266,7 @@ public class MPIALCStrategy extends CompletionStrategy {
 			log.fine( "Worker " +myRank + " has terminated" );
 	}
 	
+	/* This function checks the consistency of an ABox. */
 	public boolean mpiIsConsistent (ABox abox) {
 		if( log.isLoggable( Level.FINE ) )
 			log.fine( "### Worker "+myRank +" : Checking consistency on Branch ("+abox.getBranch() + ")" );
@@ -300,6 +316,8 @@ public class MPIALCStrategy extends CompletionStrategy {
 		return !abox.isClosed();
 	}
 	
+	/* This function implements the optimization technique - dependency-directed backtracking.
+	*  It allows to bypass some branches which improve the performance significantly. */
 	protected boolean backtrack() {
 		boolean branchFound = false;
 		abox.stats.backtracks++;
